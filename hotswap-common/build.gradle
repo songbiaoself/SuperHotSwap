@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+}
+
+group 'com.coderevolt'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+dependencies {
+    api 'cn.hutool:hutool-all:5.8.26'
+    api 'com.alibaba:fastjson:2.0.47'
+}
+
+test {
+    useJUnitPlatform()
+}

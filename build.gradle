@@ -1,0 +1,43 @@
+plugins {
+    id 'org.jetbrains.intellij' version '1.17.3'
+    id 'java'
+}
+
+group 'com.coderevolt'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+// 设置兼容性版本
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+dependencies {
+//    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+//    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation(project(":hotswap-common"))
+    implementation(project(":hotswap-api"))
+    implementation(project(":hotswap-rpc"))
+//    implementation(files("./tools.jar"))
+}
+
+// See https://github.com/JetBrains/gradle-intellij-plugin/
+intellij {
+    version = '2021.3.3'
+}
+patchPluginXml {
+    sinceBuild = "201"
+    untilBuild = "233.*"
+    changeNotes = """
+    <b>版本1.0</b>
+    <ol>
+        <li>支持SpringBoot、Mybatis、Mybatis-plus的环境下实现MapperXml的热更新</li>
+        <li>支持MapperXml方法体修改、新增、删除、resultMap、sql片段等的热更新</li>
+    </ol>
+    """
+}
+test {
+    useJUnitPlatform()
+}

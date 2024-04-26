@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+}
+
+group 'com.coderevolt'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.0'
+    implementation(project(":hotswap-common"))
+    implementation(project(":hotswap-rpc"))
+    implementation(project(":hotswap-api"))
+}
+
+// 设置兼容性版本
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName = 'hotswap-agent.jar'
+    manifest {
+        attributes 'Agent-Class': "com.coderevolt.agent.MainAgentHook"
+        attributes 'Can-Redefine-Classes': true
+        attributes 'Can-Retransform-Classes': true
+        attributes 'Manifest-Version': 1.0
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

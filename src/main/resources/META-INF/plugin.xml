@@ -1,0 +1,29 @@
+<idea-plugin>
+    <id>com.coderevolt.super-hotswap</id>
+    <name>SuperHotSwap</name>
+    <vendor email="646997146@qq.com" url="https://song_biao.gitee.io">CodeRevolt</vendor>
+
+    <description><![CDATA[
+    旨在做出最便捷的IDEA热更新插件
+    ]]></description>
+
+    <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <projectListeners>
+        <listener class="com.coderevolt.listener.ProjectExecutionListener"
+                  topic="com.intellij.execution.ExecutionListener"/>
+    </projectListeners>
+
+    <actions>
+        <!-- Add your actions here -->
+        <action id="FileHotswapAction" class="com.coderevolt.action.FileHotswapAction" text="File Hot Swap" description="文件热更新action">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>

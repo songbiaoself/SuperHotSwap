@@ -1,0 +1,6 @@
+rootProject.name = 'super-hotswap'
+include 'hotswap-common'
+include 'hotswap-agent'
+include 'hotswap-rpc'
+include 'hotswap-api'
+

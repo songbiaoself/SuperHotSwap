@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+group 'com.coderevolt'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+// 设置兼容性版本
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+
+dependencies {
+    implementation(project(":hotswap-common"))
+}
+
+test {
+    useJUnitPlatform()
+}
