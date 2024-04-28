@@ -41,7 +41,7 @@ public class RPCServer {
                     Object result = methodInvoke(receiveData);
                     //响应
                     objectOutputStream.writeObject(result);
-                    System.out.println("服务端响应成功.");
+//                    System.out.println("服务端响应成功.");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

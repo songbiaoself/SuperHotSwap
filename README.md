@@ -7,12 +7,12 @@
 - Gradle8.7
 
 ## 支持功能
-| 支持功能      | 是否支持 |
-| ----------- | ----------- |
-| MybatisXML热更新      | √       |
-| Class热更新   | 进行中        |
-| Spring热更新   | 进行中        |
-| ...   | ...        |
+| 支持功能      | 是否支持      | 说明         |
+| ----------- |-----------|------------|
+| MybatisXML热更新      | √         ||
+| Class热更新   | √ | 暂时只支持方法内修改 |
+| Spring热更新   | 进行中       ||
+| ...   | ...       ||
 
 ## 使用流程
 1. 打开IDEA安装zip格式的插件
@@ -21,9 +21,14 @@
 
 安装成功后重启IDEA，启动项目后输出Banner表示安装成功
 ![img_1.png](img/banner.png)
-3. 热更新
+3. Mapper热更新
 
 在MapperXML文件下点击`File Hot Swap`按钮执行热更新指令，指令正常输出如下
 ![img.png](img/xml-hotswap.png)
+
+4. Java热更新
+
+idea文件自动保存是有延迟的，记得先手动ctrl+s保存一下
+![img.png](img/class-hotswap.gif)
 ## 联系方式
 <646997146@qq.com>

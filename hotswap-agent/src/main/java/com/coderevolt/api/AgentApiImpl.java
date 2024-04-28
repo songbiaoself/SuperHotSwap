@@ -4,6 +4,7 @@ import com.coderevolt.AgentCommand;
 import com.coderevolt.AgentResponse;
 import com.coderevolt.enums.AgentCommandEnum;
 import com.coderevolt.service.HotswapHandler;
+import com.coderevolt.service.JavaClassHotswapHandler;
 import com.coderevolt.service.MybatisHotswapHandler;
 
 import java.util.HashMap;
@@ -20,6 +21,7 @@ public class AgentApiImpl implements AgentApi {
 
     static {
         HANDLER_MAP.put(AgentCommandEnum.MYBATIS_MAPPER_HOTSWAP, new MybatisHotswapHandler());
+        HANDLER_MAP.put(AgentCommandEnum.JAVA_CLASS_HOTSWAP, new JavaClassHotswapHandler());
     }
 
     @Override

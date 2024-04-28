@@ -10,6 +10,11 @@ public enum AgentCommandEnum {
     /**
      * mybatis mapper热更新
      */
-    MYBATIS_MAPPER_HOTSWAP
+    MYBATIS_MAPPER_HOTSWAP,
+
+    /**
+     * class热更新
+     */
+    JAVA_CLASS_HOTSWAP,
 
 }

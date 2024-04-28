@@ -1,10 +1,17 @@
 package com.coderevolt.util;
 
 import cn.hutool.system.OsInfo;
+import com.coderevolt.javac.JavaStringCompiler;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * @author 公众号: CodeRevolt
@@ -14,6 +21,8 @@ import java.util.LinkedList;
 public class AgentUtil {
 
     private static final OsInfo osinfo = new OsInfo();
+
+    private static final JavaStringCompiler compiler = new JavaStringCompiler();
 
     /**
      * bfs搜索目录下的文件
@@ -64,6 +73,18 @@ public class AgentUtil {
         path = path.replace("\\", File.separator).replace("/", File.separator);
         path = path.substring(0, path.indexOf(name) + 1);
         return (osinfo.isWindows() && path.startsWith(File.separator)) ? path.substring(1) : path;
+    }
+
+    /**
+     * 编译java文件
+     * @param filePath
+     * @return class字节码
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static Map<String, byte[]> compileJava(String filePath) throws IOException {
+        Path path = Paths.get(filePath);
+        return compiler.compile(path.getFileName().toString(), new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
     }
 
 }

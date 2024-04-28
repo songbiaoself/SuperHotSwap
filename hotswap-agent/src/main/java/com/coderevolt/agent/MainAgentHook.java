@@ -1,5 +1,6 @@
 package com.coderevolt.agent;
 
+import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.server.RPCServer;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class MainAgentHook {
                 e.printStackTrace();
             }
         }).start();
+        AgentContextHolder.init(Integer.parseInt(agentArgs), inst);
         System.out.println("   _____                            _    _         _     _____                       \n" +
                 "  / ____|                          | |  | |       | |   / ____|                      \n" +
                 " | (___   _   _  _ __    ___  _ __ | |__| |  ___  | |_ | (___ __      __ __ _  _ __  \n" +
