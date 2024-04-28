@@ -36,7 +36,7 @@ public class MainAgentHook {
                 " |_____/  \\__,_|| .__/  \\___||_|   |_|  |_| \\___/  \\__||_____/  \\_/\\_/  \\__,_|| .__/ \n" +
                 "                | |                                                           | |    \n" +
                 "                |_|                                                           |_|    ");
-        System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: 1.0");
+        System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: 1.5");
 
     }
 

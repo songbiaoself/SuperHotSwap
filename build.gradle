@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.coderevolt'
-version '1.0'
+version '1.5'
 
 repositories {
     mavenCentral()
@@ -35,6 +35,12 @@ patchPluginXml {
     <ol>
         <li>支持SpringBoot、Mybatis、Mybatis-plus的环境下实现MapperXml的热更新</li>
         <li>支持MapperXml方法体修改、新增、删除、resultMap、sql片段等的热更新</li>
+    </ol>
+    
+    <b>版本1.5</b>
+    <ol>
+        <li>支持class方法热更新</li>
+        <li>验证static方法、对象方法、内部类方法热更新</li>
     </ol>
     """
 }
