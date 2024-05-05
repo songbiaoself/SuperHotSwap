@@ -4,7 +4,6 @@ import com.coderevolt.HotswapException;
 import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.util.ProjectUtil;
-import com.coderevolt.utils.ConnectContext;
 import com.intellij.execution.ExecutionListener;
 import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.process.ProcessHandler;
@@ -53,8 +52,6 @@ public class ProjectExecutionListener implements ExecutionListener {
             machineBeanInfo.setPort(port);
             machineBeanInfo.setPid(pid);
             VirtualMachineContext.put(runProfileName, machineBeanInfo);
-
-            ConnectContext.init("127.0.0.1", port);
             virtualMachine.loadAgent(agentJarPath, port + "");
         } catch (AttachNotSupportedException | IOException | HotswapException e) {
             System.err.println("attach异常");
