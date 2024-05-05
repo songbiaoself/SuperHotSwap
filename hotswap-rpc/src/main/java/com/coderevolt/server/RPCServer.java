@@ -11,7 +11,9 @@ import java.net.Socket;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.invoke.MethodHandles.lookup;
 
@@ -21,13 +23,21 @@ import static java.lang.invoke.MethodHandles.lookup;
  */
 public class RPCServer {
 
-    private static final ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1, r -> new Thread(r, "socket accept线程"));
+    /**
+     * 只会存在一个非核心线程，60秒回收，
+     */
+    private static final ExecutorService SERVER_THREAD_POOL = new ThreadPoolExecutor(0,
+            1,
+            60,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            r -> new Thread(r, "RPC服务端线程"));
 
     public static void start(int port) throws IOException {
         ServerSocket serverSocket = new ServerSocket(port,5);
-        while (true) {
-            Socket socket =  serverSocket.accept();
-            fixedThreadPool.execute(() -> {
+        SERVER_THREAD_POOL.execute(() -> {
+            try {
+                Socket socket = serverSocket.accept();
                 try (
                         OutputStream outputStream = socket.getOutputStream();
                         InputStream inputStream = socket.getInputStream();
@@ -42,11 +52,11 @@ public class RPCServer {
                     //响应
                     objectOutputStream.writeObject(result);
 //                    System.out.println("服务端响应成功.");
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-            });
-        }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
