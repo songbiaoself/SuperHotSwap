@@ -11,6 +11,8 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <!--notify 2020.3版本后需在plugin中注册-->
+        <notificationGroup displayType="BALLOON" id="notifyAction" />
     </extensions>
 
     <projectListeners>
