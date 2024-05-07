@@ -60,7 +60,7 @@ public class JavaClassHotswapHandler implements HotswapHandler{
                 throw new HotswapException("编译失败: " + javaClassHotswapDto.getJavaFilePath());
             }
         } catch (IOException | UnmodifiableClassException | ClassNotFoundException e) {
-            throw new HotswapException("编译java文件失败: " + javaClassHotswapDto.getJavaFilePath(), e);
+            throw new HotswapException("class热更新失败: " + javaClassHotswapDto.getJavaFilePath(), e);
         }
     }
 }
