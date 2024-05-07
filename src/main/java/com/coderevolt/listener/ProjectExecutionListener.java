@@ -56,9 +56,11 @@ public class ProjectExecutionListener implements ExecutionListener {
         } catch (AttachNotSupportedException | IOException | HotswapException e) {
             System.err.println("attach异常");
             e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (AgentLoadException | AgentInitializationException e) {
             System.err.println("agent挂载异常");
             e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
     }
@@ -75,6 +77,7 @@ public class ProjectExecutionListener implements ExecutionListener {
             } catch (IOException e) {
                 System.err.println("detach异常");
                 e.printStackTrace();
+                throw new RuntimeException(e);
             } finally {
                 VirtualMachineContext.remove(runProfileName);
             }
