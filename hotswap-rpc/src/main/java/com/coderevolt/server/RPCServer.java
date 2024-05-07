@@ -36,25 +36,27 @@ public class RPCServer {
     public static void start(int port) throws IOException {
         ServerSocket serverSocket = new ServerSocket(port,5);
         SERVER_THREAD_POOL.execute(() -> {
-            try {
-                Socket socket = serverSocket.accept();
-                try (
-                        OutputStream outputStream = socket.getOutputStream();
-                        InputStream inputStream = socket.getInputStream();
-                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)
-                ) {
-                    //接受客户端数据
-                    ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
-                    Data receiveData = (Data) objectInputStream.readObject();
-                    System.out.println("接收到[" + socket.getRemoteSocketAddress() + "]客户端数据:" + JSON.toJSONString(receiveData));
-                    //反射调用
-                    Object result = methodInvoke(receiveData);
-                    //响应
-                    objectOutputStream.writeObject(result);
+            while (!Thread.currentThread().isInterrupted()) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    try (
+                            OutputStream outputStream = socket.getOutputStream();
+                            InputStream inputStream = socket.getInputStream();
+                            ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream)
+                    ) {
+                        //接受客户端数据
+                        ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
+                        Data receiveData = (Data) objectInputStream.readObject();
+                        System.out.println("接收到[" + socket.getRemoteSocketAddress() + "]客户端数据:" + JSON.toJSONString(receiveData));
+                        //反射调用
+                        Object result = methodInvoke(receiveData);
+                        //响应
+                        objectOutputStream.writeObject(result);
 //                    System.out.println("服务端响应成功.");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         });
     }

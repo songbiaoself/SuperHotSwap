@@ -20,8 +20,9 @@ public class MainAgentHook {
      */
     public static void agentmain (String agentArgs, Instrumentation inst) {
         try {
-            RPCServer.start(Integer.parseInt(agentArgs));
-            AgentContextHolder.init(Integer.parseInt(agentArgs), inst);
+            int port = Integer.parseInt(agentArgs);
+            RPCServer.start(port);
+            AgentContextHolder.init(port, inst);
             System.out.println("   _____                            _    _         _     _____                       \n" +
                     "  / ____|                          | |  | |       | |   / ____|                      \n" +
                     " | (___   _   _  _ __    ___  _ __ | |__| |  ___  | |_ | (___ __      __ __ _  _ __  \n" +

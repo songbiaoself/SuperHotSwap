@@ -11,11 +11,26 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 /**
  * 文件热更新action
  * @author 公众号:codeRevolt
  */
 public class FileHotswapAction extends AnAction {
+
+    /**
+     * 只会存在一个非核心线程，60秒回收，
+     */
+    private static final ExecutorService ACTION_THREAD_POOL = new ThreadPoolExecutor(0,
+            1,
+            60,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            r -> new Thread(r, "action服务端线程"));
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -23,12 +38,14 @@ public class FileHotswapAction extends AnAction {
         String fileName = psiFile.getName();
         for (Handler handler : HandlerStrategyFactory.listFileHandler()) {
             if (handler.isSupport(fileName)) {
-                try {
-                    handler.execute(e);
-                } catch (HotswapException ex) {
-                    IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
-                    ex.printStackTrace();
-                }
+                ACTION_THREAD_POOL.execute(() -> {
+                    try {
+                        handler.execute(e);
+                    } catch (HotswapException ex) {
+                        IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
+                        ex.printStackTrace();
+                    }
+                });
                 break;
             }
         }
