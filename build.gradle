@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.coderevolt'
-version '1.5.2'
+version '1.5.3'
 
 repositories {
     mavenCentral()
@@ -29,7 +29,8 @@ intellij {
 }
 patchPluginXml {
     sinceBuild = "203"
-    untilBuild = "233.*"
+//    包含未来所有版本分支
+    untilBuild = ""
     changeNotes = """
     <b>版本1.0</b>
     <ol>
