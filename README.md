@@ -15,8 +15,9 @@
 | ...   | ...       ||
 
 ## 使用流程
-1. 打开IDEA安装zip格式的插件
-![img.png](img/pluigin-setting.png)
+1. 在插件市场搜索安装
+![img.png](img/install.png)
+
 2. 启动项目
 
 安装成功后重启IDEA，启动项目后输出Banner表示安装成功
