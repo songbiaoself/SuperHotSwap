@@ -8,6 +8,7 @@ import com.intellij.execution.ExecutionListener;
 import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.ui.RunContentDescriptor;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
@@ -16,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 程序启动关闭监听
@@ -24,6 +27,8 @@ import java.io.IOException;
 public class ProjectExecutionListener implements ExecutionListener {
 
     private static String agentJarPath;
+
+    private static final Pattern javaExeRegex = Pattern.compile("^(.*?)java.exe");
 
     static {
         try {
@@ -41,7 +46,8 @@ public class ProjectExecutionListener implements ExecutionListener {
         try {
             RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
             String runProfileName = runProfile.getName();
-            String pid = ProjectUtil.getPid(runProfileName);
+            String javaBinDir = getJavaBinDir(env);
+            String pid = ProjectUtil.getPid(javaBinDir, runProfileName);
             int port = ProjectUtil.findAvailablePort();
             VirtualMachine virtualMachine = VirtualMachine.attach(pid);
 
@@ -63,6 +69,13 @@ public class ProjectExecutionListener implements ExecutionListener {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private String getJavaBinDir(ExecutionEnvironment env) {
+        RunContentDescriptor contentToReuse = env.getContentToReuse();
+        String commandLine = contentToReuse.getProcessHandler().toString();
+        Matcher matcher = javaExeRegex.matcher(commandLine);
+        return matcher.find() ? matcher.group(1) : "";
     }
 
     @Override

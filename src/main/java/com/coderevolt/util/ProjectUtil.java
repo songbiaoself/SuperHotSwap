@@ -21,12 +21,12 @@ public class ProjectUtil {
 
     private static final OsInfo os = new OsInfo();
 
-    public static String getPid(String projectName) throws HotswapException {
+    public static String getPid(String javaBinDir, String projectName) throws HotswapException {
         Process process = null;
         BufferedReader reader = null;
         try {
-            process = Runtime.getRuntime().exec("jps");
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "GBK"));
+            process = Runtime.getRuntime().exec(javaBinDir + "jps");
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), os.isWindows() ? "GBK" : "UTF-8"));
             String str;
             while ((str = reader.readLine()) != null) {
                 String[] lineArr = str.split(" ");
