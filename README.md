@@ -7,12 +7,13 @@
 - Gradle8.7
 
 ## 支持功能
-| 支持功能      | 是否支持      | 说明             |
-| ----------- |-----------|----------------|
-| MybatisXML热更新      | √         ||
-| Class热更新   | √ | 增强功能需安装dcevm补丁 |
-| Spring热更新   | 进行中       ||
-| ...   | ...       ||
+| 支持功能          | 是否支持      | 说明             |
+|---------------|-----------|----------------|
+| MybatisXML热更新 | √         ||
+| Class热更新      | √ | 增强功能需安装dcevm补丁 |
+| Spring热更新     | 进行中       ||
+| 远程热更新         | 进行中       ||
+| ...           | ...       ||
 
 ## 使用流程
 1. 在插件市场搜索安装
@@ -46,4 +47,9 @@ Instrumentation类重新加载的局限性
 下载对应jdk版本补丁，替换即可完成安装。
 ![img.png](img/jvmdll.png)
 ## 联系方式
+
+gitee地址: https://gitee.com/song_biao/super-hot-swap
+
+github地址: https://github.com/songbiaoself/SuperHotSwap
+
 <646997146@qq.com>
