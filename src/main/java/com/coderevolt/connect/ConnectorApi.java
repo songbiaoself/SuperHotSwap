@@ -5,7 +5,6 @@ import com.coderevolt.AgentCommand;
 import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.MachineBeanInfo;
-import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.util.ProjectUtil;
 import com.coderevolt.utils.RPC;
 
@@ -25,11 +24,11 @@ public interface ConnectorApi<T, R> {
 
     /**
      * 发送命令给所有进程
+     * @param vmList 接收进程
      * @param consumer
      * @throws HotswapException
      */
-    default void sendToAllProcess(Consumer<MachineBeanInfo> consumer) throws HotswapException{
-        Collection<MachineBeanInfo> vmList = VirtualMachineContext.values();
+    default void sendToProcess(Collection<MachineBeanInfo> vmList, Consumer<MachineBeanInfo> consumer) throws HotswapException{
         if (CollectionUtil.isNotEmpty(vmList)) {
             try {
                 Field agentApiField = this.getClass().getDeclaredField("agentApi");

@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.coderevolt'
-version '1.5.3'
+version '1.6.0'
 
 repositories {
     mavenCentral()
@@ -42,6 +42,12 @@ patchPluginXml {
     <ol>
         <li>支持class方法热更新</li>
         <li>验证static方法、对象方法、内部类方法热更新</li>
+    </ol>
+    
+    <b>版本1.6</b>
+    <ol>
+        <li>支持指定单个项目热更新</li>
+        <li>修复了一些已知bug</li>
     </ol>
     """
 }
