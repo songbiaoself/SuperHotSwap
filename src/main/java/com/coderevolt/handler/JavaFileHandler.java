@@ -5,6 +5,7 @@ import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
 import com.coderevolt.connect.AgentConnector;
 import com.coderevolt.connect.ConnectorApi;
+import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.JavaClassHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
 import com.coderevolt.proxy.GeneratorProxy;
@@ -13,6 +14,8 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.vfs.VirtualFile;
+
+import java.util.Collections;
 
 /**
  * @author 公众号: CodeRevolt
@@ -46,7 +49,8 @@ public class JavaFileHandler implements Handler{
             command.setCommandEnum(AgentCommandEnum.JAVA_CLASS_HOTSWAP);
             command.setData(new JavaClassHotswapDto(file.getPath()));
 
-            connectorApi.sendToAllProcess(vm -> {
+            String processName = e.getPresentation().getText();
+            connectorApi.sendToProcess(Collections.singletonList(VirtualMachineContext.get(processName)), vm -> {
                 AgentResponse<Object> agentResponse = connectorApi.execute(command);
                 IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]:" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
             });

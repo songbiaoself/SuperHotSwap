@@ -1,5 +1,6 @@
 package com.coderevolt.listener;
 
+import cn.hutool.core.util.StrUtil;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.context.VirtualMachineContext;
@@ -30,6 +31,8 @@ public class ProjectExecutionListener implements ExecutionListener {
 
     private static final Pattern javaExeRegex = Pattern.compile("^(.*?)java.exe");
 
+    private static final String[] runTypeList = new String[]{"application", "spring boot", "jar application"};
+
     static {
         try {
             agentJarPath = ProjectUtil.copyToLocal(ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar"), "hotswap-agent.jar");
@@ -45,6 +48,9 @@ public class ProjectExecutionListener implements ExecutionListener {
         ExecutionListener.super.processStarted(executorId, env, handler);
         try {
             RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
+            if (!StrUtil.equalsAnyIgnoreCase(runProfile.getType().getDisplayName(), runTypeList)) {
+                return;
+            }
             String runProfileName = runProfile.getName();
             String javaBinDir = getJavaBinDir(env);
             String pid = ProjectUtil.getPid(javaBinDir, runProfileName);
@@ -64,11 +70,12 @@ public class ProjectExecutionListener implements ExecutionListener {
             e.printStackTrace();
             throw new RuntimeException(e);
         } catch (AgentLoadException | AgentInitializationException e) {
-            System.err.println("agent挂载异常");
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            if (!e.getMessage().equals("0")) {
+                System.err.println("agent挂载异常");
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
         }
-
     }
 
     private String getJavaBinDir(ExecutionEnvironment env) {
@@ -82,6 +89,9 @@ public class ProjectExecutionListener implements ExecutionListener {
     public void processTerminated(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler, int exitCode) {
         ExecutionListener.super.processTerminated(executorId, env, handler, exitCode);
         RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
+        if (!StrUtil.equalsAnyIgnoreCase(runProfile.getType().getDisplayName(), runTypeList)) {
+            return;
+        }
         String runProfileName = runProfile.getName();
         MachineBeanInfo machineBeanInfo = VirtualMachineContext.get(runProfileName);
         if (machineBeanInfo != null) {

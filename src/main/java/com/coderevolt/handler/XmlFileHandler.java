@@ -5,6 +5,7 @@ import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
 import com.coderevolt.connect.AgentConnector;
 import com.coderevolt.connect.ConnectorApi;
+import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.MapperHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
 import com.coderevolt.proxy.GeneratorProxy;
@@ -15,6 +16,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.editor.Document;
 import com.intellij.psi.PsiFile;
 
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,7 +58,8 @@ public class XmlFileHandler implements Handler{
             command.setCommandEnum(AgentCommandEnum.MYBATIS_MAPPER_HOTSWAP);
             command.setData(mapperHtosDto);
 
-            connectorApi.sendToAllProcess(vm -> {
+            String processName = e.getPresentation().getText();
+            connectorApi.sendToProcess(Collections.singletonList(VirtualMachineContext.get(processName)),vm -> {
                 AgentResponse<Object> agentResponse = connectorApi.execute(command);
                 IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]:" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
             });

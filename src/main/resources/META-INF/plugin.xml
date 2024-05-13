@@ -21,9 +21,16 @@
     </projectListeners>
 
     <actions>
-        <!-- Add your actions here -->
-        <action id="FileHotswapAction" class="com.coderevolt.action.FileHotswapAction" text="File Hot Swap" description="Hot Swap Action">
+        <!--            id 全局唯一-->
+        <!-- popup属性：决定该Group是否允许子菜单     -->
+        <!-- icon：图标，需要配置为全限定命名    -->
+        <!-- 不配置compact属性，表示该Group需要支持子菜单    -->
+        <group
+                id="FileHotswapAction"
+                class="com.coderevolt.action.FileHotSwapGroupAction"
+                text="File Hot Swap"
+                popup="true">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
+        </group>
     </actions>
 </idea-plugin>
