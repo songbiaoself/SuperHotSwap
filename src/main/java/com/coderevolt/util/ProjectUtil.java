@@ -11,6 +11,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Administrator
@@ -21,20 +22,26 @@ public class ProjectUtil {
 
     private static final OsInfo os = new OsInfo();
 
+    private static final int retry = 5;
+
     public static String getPid(String javaBinDir, String projectName) throws HotswapException {
         Process process = null;
         BufferedReader reader = null;
         try {
-            process = Runtime.getRuntime().exec(javaBinDir + "jps");
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), os.isWindows() ? "GBK" : "UTF-8"));
-            String str;
-            while ((str = reader.readLine()) != null) {
-                String[] lineArr = str.split(" ");
-                if (lineArr.length > 1 && projectName.equals(lineArr[1].trim())) {
-                    return lineArr[0];
+            // 重试
+            for (int i = 0; i < retry; i++) {
+                process = Runtime.getRuntime().exec(javaBinDir + "jps");
+                reader = new BufferedReader(new InputStreamReader(process.getInputStream(), os.isWindows() ? "GBK" : "UTF-8"));
+                String str;
+                while ((str = reader.readLine()) != null) {
+                    String[] lineArr = str.split(" ");
+                    if (lineArr.length > 1 && projectName.equals(lineArr[1].trim())) {
+                        return lineArr[0];
+                    }
                 }
+                TimeUnit.SECONDS.sleep(1);
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } finally {
             if (reader != null) {
