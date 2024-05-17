@@ -2,7 +2,7 @@ package com.coderevolt.proxy;
 
 import com.alibaba.fastjson.JSON;
 import com.coderevolt.bean.Data;
-import com.coderevolt.utils.RPC;
+import com.coderevolt.utils.RpcInfo;
 
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -18,10 +18,10 @@ import java.net.Socket;
  */
 public class RPCProxy implements InvocationHandler {
 
-    private RPC rpc;
+    private RpcInfo rpc;
     private Class type;
 
-    public RPCProxy(RPC rpc, Class type) {
+    public RPCProxy(RpcInfo rpc, Class type) {
         this.rpc = rpc;
         this.type = type;
     }
@@ -29,24 +29,24 @@ public class RPCProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Object result = null;
-        System.out.println("正在连接服务端:[" + rpc.ip() + ":" + rpc.port() + "]");
+        System.out.println("正在连接服务端:[" + rpc.getIp() + ":" + rpc.getPort() + "]");
         //自动释放资源
         try (
-                Socket socket = new Socket(rpc.ip(), rpc.port());
+                Socket socket = new Socket(rpc.getIp(), rpc.getPort());
                 OutputStream outputStream = socket.getOutputStream();
                 InputStream inputStream = socket.getInputStream();
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
                 ObjectInputStream objectInputStream = new ObjectInputStream(inputStream)
         ) {
             //===============发送====================
-            Data data = new Data(type, rpc.value(), method.getReturnType(), method.getName(), method.getParameterTypes(), args);
+            Data data = new Data(type, rpc.getClassSimpleName(), method.getReturnType(), method.getName(), method.getParameterTypes(), args);
             objectOutputStream.writeObject(data);
             //==================结束=======================
             //阻塞等待响应
             System.out.println("等待服务器响应....");
             result = objectInputStream.readObject();
         }
-        System.out.println("接受服务端[" + rpc.ip() + ":" + rpc.port() + "]的消息:" + JSON.toJSONString(result));
+        System.out.println("接受服务端[" + rpc.getIp() + ":" + rpc.getPort() + "]的消息:" + JSON.toJSONString(result));
         return result;
     }
 

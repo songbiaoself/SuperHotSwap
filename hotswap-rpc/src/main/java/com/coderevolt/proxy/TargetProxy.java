@@ -1,6 +1,7 @@
 package com.coderevolt.proxy;
 
 import com.coderevolt.utils.RPC;
+import com.coderevolt.utils.RpcInfo;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -29,7 +30,7 @@ public class TargetProxy implements InvocationHandler {
             RPC rpc = field.getAnnotation(RPC.class);
             if (rpc!=null) {
                 //注入带有rpc注解的成员变量中
-                Object rpcProxy = GeneratorProxy.getRPCProxy(field.getType(), rpc);
+                Object rpcProxy = GeneratorProxy.getRPCProxy(field.getType(), new RpcInfo(rpc.ip(), rpc.port(), rpc.value()));
                 field.set(target,rpcProxy);
             }
         }

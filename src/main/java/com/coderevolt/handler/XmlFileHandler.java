@@ -1,14 +1,11 @@
 package com.coderevolt.handler;
 
 import com.coderevolt.AgentCommand;
-import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
-import com.coderevolt.connect.AgentConnector;
-import com.coderevolt.connect.ConnectorApi;
+import com.coderevolt.connect.Connector;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.MapperHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
-import com.coderevolt.proxy.GeneratorProxy;
 import com.coderevolt.util.IdeaNotifyUtil;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -26,8 +23,6 @@ import java.util.regex.Pattern;
  * @description
  */
 public class XmlFileHandler implements Handler{
-
-    private ConnectorApi<MapperHotswapDto, Object> connectorApi = GeneratorProxy.getProxy(new AgentConnector<>());
 
     private static final String mapperClassRegex = "<mapper\\s+namespace\\s*=\\s*\"(.+)\">";
 
@@ -59,10 +54,7 @@ public class XmlFileHandler implements Handler{
             command.setData(mapperHtosDto);
 
             String processName = e.getPresentation().getText();
-            connectorApi.sendToProcess(Collections.singletonList(VirtualMachineContext.get(processName)),vm -> {
-                AgentResponse<Object> agentResponse = connectorApi.execute(command);
-                IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]:" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
-            });
+            Connector.sendToProcess(command, Collections.singletonList(VirtualMachineContext.get(processName)), agentResponse -> IdeaNotifyUtil.notify("[" + processName + "]:" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR));
         } else {
             IdeaNotifyUtil.notify("namespace解析失败", NotificationType.WARNING);
         }

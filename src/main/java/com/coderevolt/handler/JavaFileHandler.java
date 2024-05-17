@@ -1,14 +1,11 @@
 package com.coderevolt.handler;
 
 import com.coderevolt.AgentCommand;
-import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
-import com.coderevolt.connect.AgentConnector;
-import com.coderevolt.connect.ConnectorApi;
+import com.coderevolt.connect.Connector;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.JavaClassHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
-import com.coderevolt.proxy.GeneratorProxy;
 import com.coderevolt.util.IdeaNotifyUtil;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -23,8 +20,6 @@ import java.util.Collections;
  * @description
  */
 public class JavaFileHandler implements Handler{
-
-    private ConnectorApi<JavaClassHotswapDto, Object> connectorApi = GeneratorProxy.getProxy(new AgentConnector<>());
 
     @Override
     public boolean isSupport(Object obj) {
@@ -50,9 +45,8 @@ public class JavaFileHandler implements Handler{
             command.setData(new JavaClassHotswapDto(file.getPath()));
 
             String processName = e.getPresentation().getText();
-            connectorApi.sendToProcess(Collections.singletonList(VirtualMachineContext.get(processName)), vm -> {
-                AgentResponse<Object> agentResponse = connectorApi.execute(command);
-                IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]:" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
+            Connector.sendToProcess(command, Collections.singletonList(VirtualMachineContext.get(processName)), agentResponse -> {
+                IdeaNotifyUtil.notify("[" + processName + "]：" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
             });
         } catch (Exception exception) {
             throw new HotswapException(exception.getMessage(), exception);

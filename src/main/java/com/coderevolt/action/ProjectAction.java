@@ -48,8 +48,8 @@ public class ProjectAction extends AnAction {
                     try {
                         handler.execute(e);
                     } catch (HotswapException ex) {
-                        IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
                         ex.printStackTrace();
+                        IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
                     }
                 });
                 break;
