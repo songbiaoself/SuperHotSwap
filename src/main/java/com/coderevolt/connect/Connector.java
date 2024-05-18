@@ -1,6 +1,5 @@
 package com.coderevolt.connect;
 
-import cn.hutool.core.collection.CollectionUtil;
 import com.coderevolt.AgentCommand;
 import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
@@ -27,7 +26,7 @@ public class Connector {
      * @throws HotswapException
      */
     public static void sendToProcess(AgentCommand command, Collection<MachineBeanInfo> vmList, Consumer<AgentResponse<Object>> consumer) throws HotswapException{
-        if (CollectionUtil.isNotEmpty(vmList)) {
+        if (vmList != null && !vmList.isEmpty()) {
             try {
                 vmList.forEach(vm -> {
                     try {

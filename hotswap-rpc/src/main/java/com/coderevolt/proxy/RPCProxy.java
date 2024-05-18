@@ -1,6 +1,5 @@
 package com.coderevolt.proxy;
 
-import com.alibaba.fastjson.JSON;
 import com.coderevolt.bean.Data;
 import com.coderevolt.utils.RpcInfo;
 
@@ -46,7 +45,7 @@ public class RPCProxy implements InvocationHandler {
             System.out.println("等待服务器响应....");
             result = objectInputStream.readObject();
         }
-        System.out.println("接受服务端[" + rpc.getIp() + ":" + rpc.getPort() + "]的消息:" + JSON.toJSONString(result));
+        System.out.println("接受服务端[" + rpc.getIp() + ":" + rpc.getPort() + "]的消息:" + result);
         return result;
     }
 

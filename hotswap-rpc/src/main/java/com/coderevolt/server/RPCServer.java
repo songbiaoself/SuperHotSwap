@@ -1,6 +1,5 @@
 package com.coderevolt.server;
 
-import com.alibaba.fastjson.JSON;
 import com.coderevolt.bean.Data;
 
 import java.io.*;
@@ -47,7 +46,7 @@ public class RPCServer {
                         //接受客户端数据
                         ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
                         Data receiveData = (Data) objectInputStream.readObject();
-                        System.out.println("接收到[" + socket.getRemoteSocketAddress() + "]客户端数据:" + JSON.toJSONString(receiveData));
+                        System.out.println("接收到[" + socket.getRemoteSocketAddress() + "]客户端数据:" + receiveData);
                         //反射调用
                         Object result = methodInvoke(receiveData);
                         //响应

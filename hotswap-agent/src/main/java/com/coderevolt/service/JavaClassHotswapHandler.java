@@ -1,11 +1,11 @@
 package com.coderevolt.service;
 
-import cn.hutool.core.collection.CollectionUtil;
 import com.coderevolt.AgentCommand;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.dto.JavaClassHotswapDto;
 import com.coderevolt.util.AgentUtil;
+import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.lang.instrument.ClassDefinition;
@@ -45,7 +45,7 @@ public class JavaClassHotswapHandler implements HotswapHandler{
         Instrumentation inst = agentContext.getInst();
         try {
             Map<String, byte[]> classMap = AgentUtil.compileJava(javaClassHotswapDto.getJavaFilePath());
-            if (CollectionUtil.isNotEmpty(classMap)) {
+            if (!CollectionUtils.isEmpty(classMap)) {
                 List<ClassDefinition> definitions = new ArrayList<>();
                 classMap.forEach((k, v) -> {
                     try {

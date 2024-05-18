@@ -59,7 +59,6 @@ public class MapperHotswapPlugin {
      * @param type mapper类
      */
     public static void reloadMapperXml(Configuration configuration, String xmlResource, Class type) throws HotswapException {
-        long startTime = System.currentTimeMillis();
         Set<String> loadedResources = getLoadedResources(configuration);
         loadedResources.remove(xmlResource);
         loadedResources.remove(type.toString());
@@ -75,7 +74,6 @@ public class MapperHotswapPlugin {
             removeStatement(xmlResource, configuration, type);
         }
         xmlParser.parse();
-        System.out.println(xmlResource + "文件热更新完成, 耗时ms: " + (System.currentTimeMillis() - startTime));
     }
 
     private static void removeStatement(String xmlResource, Configuration configuration, Class type) {

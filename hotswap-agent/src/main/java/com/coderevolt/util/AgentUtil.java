@@ -1,6 +1,5 @@
 package com.coderevolt.util;
 
-import cn.hutool.system.OsInfo;
 import com.coderevolt.javac.JavaStringCompiler;
 
 import java.io.File;
@@ -19,8 +18,6 @@ import java.util.Map;
  * @description
  */
 public class AgentUtil {
-
-    private static final OsInfo osinfo = new OsInfo();
 
     private static final JavaStringCompiler compiler = new JavaStringCompiler();
 
@@ -72,7 +69,7 @@ public class AgentUtil {
         name = name.replace("\\", File.separator).replace("/", File.separator);
         path = path.replace("\\", File.separator).replace("/", File.separator);
         path = path.substring(0, path.indexOf(name) + 1);
-        return (osinfo.isWindows() && path.startsWith(File.separator)) ? path.substring(1) : path;
+        return (OsUtil.isWindows() && path.startsWith(File.separator)) ? path.substring(1) : path;
     }
 
     /**

@@ -9,6 +9,8 @@ import java.io.Serializable;
  */
 public class JavaClassHotswapDto implements Serializable {
 
+    private static final long serialVersionUID = 2L;
+
     /**
      * java文件绝对路径
      */
@@ -26,4 +28,10 @@ public class JavaClassHotswapDto implements Serializable {
         this.javaFilePath = javaFilePath;
     }
 
+    @Override
+    public String toString() {
+        return "JavaClassHotswapDto{" +
+                "javaFilePath='" + javaFilePath + '\'' +
+                '}';
+    }
 }

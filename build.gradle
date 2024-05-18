@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.coderevolt'
-version '1.6.2'
+version '1.7.0'
 
 repositories {
     mavenCentral()
@@ -47,6 +47,12 @@ patchPluginXml {
     <b>版本1.6</b>
     <ol>
         <li>支持指定单个项目热更新</li>
+        <li>修复了一些已知bug</li>
+    </ol>
+    
+    <b>版本1.7</b>
+    <ol>
+        <li>去除多余jar，插件瘦身</li>
         <li>修复了一些已知bug</li>
     </ol>
     """

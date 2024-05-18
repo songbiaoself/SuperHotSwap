@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 public class MapperHotswapDto implements Serializable {
 
+    private static final long serialVersionUID = 3L;
     /**
      * 类全名称
      */
@@ -33,5 +34,13 @@ public class MapperHotswapDto implements Serializable {
 
     public void setMapperClass(String mapperClass) {
         this.mapperClass = mapperClass;
+    }
+
+    @Override
+    public String toString() {
+        return "MapperHotswapDto{" +
+                "mapperClass='" + mapperClass + '\'' +
+                ", mapperXmlPath='" + mapperXmlPath + '\'' +
+                '}';
     }
 }

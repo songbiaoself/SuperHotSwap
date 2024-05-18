@@ -1,18 +1,18 @@
 package com.coderevolt.service;
 
-import cn.hutool.core.io.IoUtil;
-import cn.hutool.extra.spring.SpringUtil;
 import com.coderevolt.AgentCommand;
 import com.coderevolt.HotswapException;
 import com.coderevolt.dto.MapperHotswapDto;
 import com.coderevolt.plugin.MapperHotswapPlugin;
 import com.coderevolt.util.AgentUtil;
+import com.coderevolt.util.SpringUtil;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 /**
  * @author 公众号: CodeRevolt
@@ -65,7 +65,7 @@ public class MybatisHotswapHandler implements HotswapHandler{
             File xmlFile = new File(mapperHotswapDto.getMapperXmlPath());
             String absClassPath = AgentUtil.getAbsClassPath(type);
             File xmlResourceFile = AgentUtil.searchFile(absClassPath, xmlFile.getName());
-            IoUtil.copy(new FileInputStream(xmlFile), new FileOutputStream(xmlResourceFile));
+            Files.copy(new FileInputStream(xmlFile), xmlResourceFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             // 执行mapper热更新
             String xmlResource = xmlResourceFile.getAbsolutePath().substring(absClassPath.length());

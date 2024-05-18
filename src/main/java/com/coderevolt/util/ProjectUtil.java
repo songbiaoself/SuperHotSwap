@@ -1,14 +1,14 @@
 package com.coderevolt.util;
 
 
-import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.system.OsInfo;
 import com.coderevolt.HotswapException;
+import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.proxy.TargetProxy;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -20,8 +20,6 @@ public class ProjectUtil {
 
     private static final String homePath = System.getProperty("user.home");
 
-    private static final OsInfo os = new OsInfo();
-
     private static final int retry = 5;
 
     public static String getPid(String javaBinDir, String projectName) throws HotswapException {
@@ -31,11 +29,13 @@ public class ProjectUtil {
             // 重试
             for (int i = 0; i < retry; i++) {
                 process = Runtime.getRuntime().exec(javaBinDir + "jps");
-                reader = new BufferedReader(new InputStreamReader(process.getInputStream(), os.isWindows() ? "GBK" : "UTF-8"));
+                reader = new BufferedReader(new InputStreamReader(process.getInputStream(), OsUtil.isWindows() ? "GBK" : "UTF-8"));
                 String str;
                 while ((str = reader.readLine()) != null) {
                     String[] lineArr = str.split(" ");
-                    if (lineArr.length > 1 && projectName.equals(lineArr[1].trim())) {
+                    if (lineArr.length > 1
+                            && projectName.equals(lineArr[1].trim())
+                            && !VirtualMachineContext.existPid(lineArr[0])) {
                         return lineArr[0];
                     }
                 }
@@ -58,13 +58,13 @@ public class ProjectUtil {
         throw new HotswapException("项目名称: " + projectName + ", pid查找失败");
     }
 
-    public static String copyToLocal(InputStream inputStream, String fileName) throws FileNotFoundException {
+    public static String copyToLocal(InputStream inputStream, String fileName) throws IOException {
         File file = new File(homePath, "hotswap-libs");
         if (!file.exists()) {
             file.mkdir();
         }
         File targetFile = new File(file, fileName);
-        IoUtil.copy(inputStream, new FileOutputStream(targetFile));
+        Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         return targetFile.getAbsolutePath();
     }
 
@@ -73,9 +73,9 @@ public class ProjectUtil {
         while (true) {
             int p = 20000 + random.nextInt(45535);
             Process process;
-            if (os.isWindows()) {
+            if (OsUtil.isWindows()) {
                 process = Runtime.getRuntime().exec("netstat -ano | findstr " + p);
-            } else if (os.isLinux()) {
+            } else if (OsUtil.isLinux()) {
                 process = Runtime.getRuntime().exec("netstat -tunlp | grep " + p);
             } else {
                 return p;

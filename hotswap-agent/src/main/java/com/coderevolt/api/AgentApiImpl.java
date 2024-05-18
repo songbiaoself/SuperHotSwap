@@ -31,7 +31,9 @@ public class AgentApiImpl implements AgentApi {
             return AgentResponse.failed("没找到处理器: " + agentCommand.getCommandEnum(), null);
         }
         try {
+            long startTime = System.currentTimeMillis();
             handler.dispatch(agentCommand);
+            System.out.println("热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
             return AgentResponse.success("执行命令成功", null);
         } catch (Exception e) {
             e.printStackTrace();

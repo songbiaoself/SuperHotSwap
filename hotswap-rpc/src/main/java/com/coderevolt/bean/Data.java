@@ -1,6 +1,7 @@
 package com.coderevolt.bean;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * @Description: 数据传输实体类
@@ -94,5 +95,17 @@ public class Data implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "Data{" +
+                "type=" + type +
+                ", name='" + name + '\'' +
+                ", returnType=" + returnType +
+                ", methodName='" + methodName + '\'' +
+                ", parameterTypes=" + Arrays.toString(parameterTypes) +
+                ", args=" + Arrays.toString(args) +
+                '}';
     }
 }

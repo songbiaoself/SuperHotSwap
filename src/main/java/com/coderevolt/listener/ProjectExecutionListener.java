@@ -1,10 +1,10 @@
 package com.coderevolt.listener;
 
-import cn.hutool.core.util.StrUtil;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.util.ProjectUtil;
+import com.coderevolt.util.StrUtil;
 import com.intellij.execution.ExecutionListener;
 import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.process.ProcessHandler;
@@ -16,7 +16,6 @@ import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,30 +32,26 @@ public class ProjectExecutionListener implements ExecutionListener {
 
     private static final String[] runTypeList = new String[]{"application", "spring boot", "jar application"};
 
-    static {
-        try {
-            agentJarPath = ProjectUtil.copyToLocal(ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar"), "hotswap-agent.jar");
-        } catch (FileNotFoundException e) {
-            System.err.println("agentJar初始化到本地失败");
-            e.printStackTrace();
-            System.exit(-1);
-        }
-    }
-
     @Override
     public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler) {
         ExecutionListener.super.processStarted(executorId, env, handler);
         try {
+            if (StrUtil.isEmpty(getAgentJarPath())) {
+                return;
+            }
             RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
-            if (!StrUtil.equalsAnyIgnoreCase(runProfile.getType().getDisplayName(), runTypeList)) {
+            if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
                 return;
             }
             String runProfileName = runProfile.getName();
             String javaBinDir = getJavaBinDir(env);
-            String pid = ProjectUtil.getPid(javaBinDir, runProfileName);
-            int port = ProjectUtil.findAvailablePort();
-            VirtualMachine virtualMachine = VirtualMachine.attach(pid);
+            String startFileName = getStartFileName(env);
 
+            // jps 进程名以文件命名
+            String pid = ProjectUtil.getPid(javaBinDir, startFileName);
+            int port = ProjectUtil.findAvailablePort();
+
+            VirtualMachine virtualMachine = VirtualMachine.attach(pid);
             MachineBeanInfo machineBeanInfo = new MachineBeanInfo();
             machineBeanInfo.setProcessName(runProfileName);
             machineBeanInfo.setVirtualMachine(virtualMachine);
@@ -78,6 +73,24 @@ public class ProjectExecutionListener implements ExecutionListener {
         }
     }
 
+    private String getStartFileName(ExecutionEnvironment env) {
+        RunContentDescriptor contentToReuse = env.getContentToReuse();
+        String commandLine = contentToReuse.getProcessHandler().toString();
+        String specialClassName = commandLine.substring(commandLine.lastIndexOf(" ")).trim();
+        return specialClassName.contains(".") ? specialClassName.substring(specialClassName.lastIndexOf(".") + 1) : specialClassName;
+    }
+
+    private static String getAgentJarPath() throws IOException {
+        if (agentJarPath == null) {
+            synchronized (ProjectExecutionListener.class) {
+                if (agentJarPath == null) {
+                    agentJarPath = ProjectUtil.copyToLocal(ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar"), "hotswap-agent.jar");
+                }
+            }
+        }
+        return agentJarPath;
+    }
+
     private String getJavaBinDir(ExecutionEnvironment env) {
         RunContentDescriptor contentToReuse = env.getContentToReuse();
         String commandLine = contentToReuse.getProcessHandler().toString();
@@ -89,7 +102,7 @@ public class ProjectExecutionListener implements ExecutionListener {
     public void processTerminated(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler, int exitCode) {
         ExecutionListener.super.processTerminated(executorId, env, handler, exitCode);
         RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
-        if (!StrUtil.equalsAnyIgnoreCase(runProfile.getType().getDisplayName(), runTypeList)) {
+        if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
             return;
         }
         String runProfileName = runProfile.getName();

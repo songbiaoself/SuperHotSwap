@@ -11,6 +11,8 @@ import java.io.Serializable;
  */
 public class AgentCommand<T> implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private AgentCommandEnum commandEnum;
 
     private T data;
@@ -29,5 +31,13 @@ public class AgentCommand<T> implements Serializable {
 
     public void setData(T data) {
         this.data = data;
+    }
+
+    @Override
+    public String toString() {
+        return "AgentCommand{" +
+                "commandEnum=" + commandEnum +
+                ", data=" + data +
+                '}';
     }
 }

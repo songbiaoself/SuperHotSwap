@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     compileOnly 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.0'
+    implementation fileTree(dir: "/libs", includes: ['tools.jar'])
     implementation(project(":hotswap-common"))
     implementation(project(":hotswap-rpc"))
     implementation(project(":hotswap-api"))
