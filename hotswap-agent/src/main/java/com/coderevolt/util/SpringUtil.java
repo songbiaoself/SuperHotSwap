@@ -31,6 +31,10 @@ import java.util.Map;
 @Component
 public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextAware {
 
+    public SpringUtil() {
+        System.out.println("初始化Spring上下文容器");
+    }
+
     /**
      * "@PostConstruct"注解标记的类中，由于ApplicationContext还未加载，导致空指针<br>
      * 因此实现BeanFactoryPostProcessor注入ConfigurableListableBeanFactory实现bean的操作
