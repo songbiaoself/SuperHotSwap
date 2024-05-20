@@ -78,7 +78,13 @@ public class MapperHotswapPlugin {
 
     private static void removeStatement(String xmlResource, Configuration configuration, Class type) {
         try {
-            Field mappedStatementField = configuration.getClass().getDeclaredField("mappedStatements");
+            // plus 3.2.0版本 mappedStatements存放在父类
+            Field mappedStatementField;
+            try {
+                mappedStatementField = configuration.getClass().getDeclaredField("mappedStatements");
+            } catch (NoSuchFieldException e) {
+                mappedStatementField = configuration.getClass().getSuperclass().getDeclaredField("mappedStatements");
+            }
             mappedStatementField.setAccessible(true);
             Map<String, MappedStatement> statementMap = (Map<String, MappedStatement>) mappedStatementField.get(configuration);
             XPathParser xPathParser = new XPathParser(configuration.getClass().getResourceAsStream("/" + xmlResource), true, configuration.getVariables(), new XMLMapperEntityResolver());
