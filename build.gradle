@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.coderevolt'
-version '1.7.0'
+version '1.7.1'
 
 repositories {
     mavenCentral()
@@ -54,6 +54,7 @@ patchPluginXml {
     <ol>
         <li>去除多余jar，插件瘦身</li>
         <li>修复了一些已知bug</li>
+        <li>idea进程崩溃修复</li>
     </ol>
     """
 }
