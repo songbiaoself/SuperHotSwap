@@ -27,22 +27,17 @@ public class Connector {
      */
     public static void sendToProcess(AgentCommand command, Collection<MachineBeanInfo> vmList, Consumer<AgentResponse<Object>> consumer) throws HotswapException{
         if (vmList != null && !vmList.isEmpty()) {
-            try {
-                vmList.forEach(vm -> {
-                    try {
-                        // 获取rpc连接
-                        Class<AgentApi> agentApiClass = AgentApi.class;
-                        AgentApi rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
-                        consumer.accept(rpcProxy.execute(command));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，pid: " + vm.getPid() + "，异常: " + e.getMessage());
-                    }
-                });
-
-            } catch (Exception e) {
-                throw new HotswapException("修改远程调用ip端口失败", e);
-            }
+            vmList.forEach(vm -> {
+                try {
+                    // 获取rpc连接
+                    Class<AgentApi> agentApiClass = AgentApi.class;
+                    AgentApi rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
+                    consumer.accept(rpcProxy.execute(command));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，pid: " + vm.getPid() + "，异常: " + e.getMessage());
+                }
+            });
         }
     }
 
