@@ -9,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -22,18 +21,19 @@ import static java.lang.invoke.MethodHandles.lookup;
  */
 public class RPCServer {
 
-    /**
-     * 只会存在一个非核心线程，60秒回收，
-     */
-    private static final ExecutorService SERVER_THREAD_POOL = new ThreadPoolExecutor(0,
-            1,
-            60,
-            TimeUnit.SECONDS,
+    private static final ThreadPoolExecutor SERVER_THREAD_POOL = new ThreadPoolExecutor(2,
+            Integer.MAX_VALUE,
+            30,
+            TimeUnit.MINUTES,
             new LinkedBlockingQueue<>(),
             r -> new Thread(r, "RPC服务端线程"));
 
+    static {
+        SERVER_THREAD_POOL.allowCoreThreadTimeOut(true);
+    }
+
     public static void start(int port) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(port,5);
+        ServerSocket serverSocket = new ServerSocket(port);
         SERVER_THREAD_POOL.execute(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
