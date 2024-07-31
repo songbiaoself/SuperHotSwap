@@ -7,7 +7,15 @@ group 'com.coderevolt'
 version '1.7.1'
 
 repositories {
+    mavenLocal()
+    maven {
+        url 'https://maven.aliyun.com/repository/public/'
+    }
     mavenCentral()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
 }
 
 // 设置兼容性版本
@@ -20,7 +28,7 @@ dependencies {
     implementation(project(":hotswap-common"))
     implementation(project(":hotswap-api"))
     implementation(project(":hotswap-rpc"))
-//    implementation(files("./tools.jar"))
+    compileOnly(files("./tools.jar"))
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/

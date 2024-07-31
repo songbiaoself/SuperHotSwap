@@ -31,13 +31,16 @@ public class AgentApiImpl implements AgentApi {
             return AgentResponse.failed("没找到处理器: " + agentCommand.getCommandEnum(), null);
         }
         try {
+            if (!handler.validateEnv()) {
+                return AgentResponse.failed("依赖环境校验失败: " + agentCommand.getCommandEnum(), null);
+            }
             long startTime = System.currentTimeMillis();
             handler.dispatch(agentCommand);
-            System.out.println("热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
+            System.out.println("[SuperHotSwap]热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
             return AgentResponse.success("执行命令成功", null);
         } catch (Exception e) {
             e.printStackTrace();
-            return AgentResponse.failed("执行命名失败: " + e.getMessage(), null);
+            return AgentResponse.failed("执行命令失败: " + e.getMessage(), null);
         }
     }
 

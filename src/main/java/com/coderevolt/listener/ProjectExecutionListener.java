@@ -36,12 +36,9 @@ public class ProjectExecutionListener implements ExecutionListener {
 
     private static final String[] runTypeList = new String[]{"application", "spring boot", "jar application"};
 
-    /**
-     * 只会存在一个非核心线程，60秒回收，
-     */
-    private static final ExecutorService EXECUTOR_THREAD_POOL = new ThreadPoolExecutor(0,
-            1,
-            60,
+    private static final ExecutorService EXECUTOR_THREAD_POOL = new ThreadPoolExecutor(2,
+            Integer.MAX_VALUE,
+            0,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
             r -> new Thread(r, "ExecutionListener线程"));

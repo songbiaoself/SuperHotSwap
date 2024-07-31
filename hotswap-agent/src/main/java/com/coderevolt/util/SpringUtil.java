@@ -32,7 +32,7 @@ import java.util.Map;
 public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextAware {
 
     public SpringUtil() {
-        System.out.println("初始化Spring上下文容器");
+        System.out.println("[SuperHotSwap]初始化Spring上下文容器");
     }
 
     /**

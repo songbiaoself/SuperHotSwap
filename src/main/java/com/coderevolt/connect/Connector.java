@@ -9,6 +9,9 @@ import com.coderevolt.proxy.GeneratorProxy;
 import com.coderevolt.utils.RpcInfo;
 
 import java.util.Collection;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -17,6 +20,18 @@ import java.util.function.Consumer;
  * @description
  */
 public class Connector {
+
+    private static final ThreadPoolExecutor COMMAND_THREAD_POOL = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+            Integer.MAX_VALUE,
+            30,
+            TimeUnit.MINUTES,
+            new LinkedBlockingQueue<>(),
+            r -> new Thread(r, "Command线程"));
+
+    static {
+        COMMAND_THREAD_POOL.allowCoreThreadTimeOut(true);
+    }
+
 
     /**
      * 发送命令给所有进程
@@ -27,17 +42,19 @@ public class Connector {
      */
     public static void sendToProcess(AgentCommand command, Collection<MachineBeanInfo> vmList, Consumer<AgentResponse<Object>> consumer) throws HotswapException{
         if (vmList != null && !vmList.isEmpty()) {
-            vmList.forEach(vm -> {
-                try {
-                    // 获取rpc连接
-                    Class<AgentApi> agentApiClass = AgentApi.class;
-                    AgentApi rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
-                    consumer.accept(rpcProxy.execute(command));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，pid: " + vm.getPid() + "，异常: " + e.getMessage());
-                }
-            });
+            for (MachineBeanInfo vm : vmList) {
+                COMMAND_THREAD_POOL.execute(() -> {
+                    try {
+                        // 获取rpc连接
+                        Class<AgentApi> agentApiClass = AgentApi.class;
+                        AgentApi rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
+                        consumer.accept(rpcProxy.execute(command));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，pid: " + vm.getPid() + "，异常: " + e.getMessage());
+                    }
+                });
+            }
         }
     }
 

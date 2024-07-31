@@ -17,6 +17,10 @@ dependencies {
     implementation(project(":hotswap-api"))
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+}
+
 // 设置兼容性版本
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
