@@ -3,13 +3,16 @@ package com.coderevolt.listener;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.context.VirtualMachineContext;
+import com.coderevolt.util.IdeaNotifyUtil;
 import com.coderevolt.util.ProjectUtil;
 import com.coderevolt.util.StrUtil;
 import com.intellij.execution.ExecutionListener;
 import com.intellij.execution.configurations.RunConfigurationBase;
+import com.intellij.execution.process.BaseProcessHandler;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.ui.RunContentDescriptor;
+import com.intellij.notification.NotificationType;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
@@ -17,6 +20,7 @@ import com.sun.tools.attach.VirtualMachine;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -57,11 +61,7 @@ public class ProjectExecutionListener implements ExecutionListener {
                     return;
                 }
                 String runProfileName = runProfile.getName();
-                String javaBinDir = getJavaBinDir(env);
-                String startFileName = getStartFileName(env);
-
-                // jps 进程名以文件命名
-                String pid = ProjectUtil.getPid(javaBinDir, startFileName);
+                String pid = getPid(handler);
                 int port = ProjectUtil.findAvailablePort();
 
                 VirtualMachine virtualMachine = VirtualMachine.attach(pid);
@@ -73,15 +73,16 @@ public class ProjectExecutionListener implements ExecutionListener {
                 machineBeanInfo.setPid(pid);
                 VirtualMachineContext.put(runProfileName, machineBeanInfo);
                 virtualMachine.loadAgent(agentJarPath, port + "");
+                virtualMachine.detach();
             } catch (AttachNotSupportedException | IOException | HotswapException e) {
                 System.err.println("attach异常");
                 e.printStackTrace();
-                throw new RuntimeException(e);
+                IdeaNotifyUtil.notify(e.getMessage(), NotificationType.ERROR);
             } catch (AgentLoadException | AgentInitializationException e) {
                 if (!e.getMessage().equals("0")) {
                     System.err.println("agent挂载异常");
                     e.printStackTrace();
-                    throw new RuntimeException(e);
+                    IdeaNotifyUtil.notify(e.getMessage(), NotificationType.ERROR);
                 }
             }
         });
@@ -112,6 +113,18 @@ public class ProjectExecutionListener implements ExecutionListener {
         return matcher.find() ? matcher.group(1) : "";
     }
 
+    private String getPid(@NotNull ProcessHandler handler) throws HotswapException {
+        try {
+            Process process = ((BaseProcessHandler) handler).getProcess();
+            Class<? extends Process> proceeClz = process.getClass();
+            Method getPidMethod = proceeClz.getMethod("pid");
+            getPidMethod.setAccessible(true);
+            return String.valueOf(getPidMethod.invoke(process));
+        } catch (Exception e) {
+            throw new HotswapException("反射获取pid失败", e);
+        }
+    }
+
     @Override
     public void processTerminated(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler, int exitCode) {
         ExecutionListener.super.processTerminated(executorId, env, handler, exitCode);
@@ -120,19 +133,7 @@ public class ProjectExecutionListener implements ExecutionListener {
             if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
                 return;
             }
-            String runProfileName = runProfile.getName();
-            MachineBeanInfo machineBeanInfo = VirtualMachineContext.get(runProfileName);
-            if (machineBeanInfo != null) {
-                try {
-                    machineBeanInfo.getVirtualMachine().detach();
-                } catch (IOException e) {
-                    System.err.println("detach异常");
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                } finally {
-                    VirtualMachineContext.remove(runProfileName);
-                }
-            }
+            VirtualMachineContext.remove(runProfile.getName());
         });
     }
 

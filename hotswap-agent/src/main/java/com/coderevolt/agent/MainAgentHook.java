@@ -14,6 +14,17 @@ import java.lang.instrument.Instrumentation;
 public class MainAgentHook {
 
     /**
+     * javaAgent回调
+     * @param agentArgs
+     * @param inst
+     */
+    public static void premain(String agentArgs, Instrumentation inst) {
+        System.out.println("agent回调测试:" + agentArgs);
+        System.out.println(inst);
+        agentmain(agentArgs, inst);
+    }
+
+    /**
      * attach回调方法
      * @param agentArgs
      * @param inst
@@ -31,7 +42,7 @@ public class MainAgentHook {
                     " |_____/  \\__,_|| .__/  \\___||_|   |_|  |_| \\___/  \\__||_____/  \\_/\\_/  \\__,_|| .__/ \n" +
                     "                | |                                                           | |    \n" +
                     "                |_|                                                           |_|    ");
-            System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: 1.7.1");
+            System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: 1.8.0，link: https://mp.weixin.qq.com/s/QPviEak1uvmJlDcB4I-3ZQ");
         } catch (IOException e) {
             System.err.println("rpc服务端启动失败");
             e.printStackTrace();

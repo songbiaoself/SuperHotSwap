@@ -9,7 +9,10 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -18,10 +21,22 @@ import java.util.concurrent.TimeUnit;
  */
 public class ProjectUtil {
 
-    private static final String homePath = System.getProperty("user.home");
+    private static final String homePath = "C:/SuperHotSwap";
 
     private static final int retry = 5;
 
+    private static final String tmp = System.getenv("TMP");
+    private static final String username = System.getenv("USERNAME");
+
+    /**
+     * 有时获取不到pid
+     * @see com.coderevolt.util.ProjectUtil#getLatestPidFromDir()
+     * @param javaBinDir
+     * @param projectName
+     * @return
+     * @throws HotswapException
+     */
+    @Deprecated
     public static String getPid(String javaBinDir, String projectName) throws HotswapException {
         Process process = null;
         BufferedReader reader = null;
@@ -58,10 +73,48 @@ public class ProjectUtil {
         throw new HotswapException("项目名称: " + projectName + ", pid查找失败");
     }
 
+    static class PidFileStruct {
+
+        long createTimeMillis;
+
+        String pid;
+
+        public PidFileStruct(long createTimeMillis, String pid) {
+            this.createTimeMillis = createTimeMillis;
+            this.pid = pid;
+        }
+
+    }
+
+    /**
+     * 从pid存放目录获取最新的pid，则是刚启动的java进程
+     * @return
+     * @throws HotswapException
+     */
+    public static String getLatestPidFromDir() throws HotswapException {
+        String pidDir = tmp + "\\" + "hsperfdata_" + username;
+        PidFileStruct pidFileStruct = Arrays.stream(Objects.requireNonNull(new File(pidDir).listFiles()))
+                .filter(p ->  !VirtualMachineContext.existPid(p.getName()))
+                .map(f -> {
+                    try {
+                        return new PidFileStruct(Files.readAttributes(f.toPath(), BasicFileAttributes.class).creationTime().toMillis(), f.getName());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).max((o1, o2) -> {
+                    if (o1.createTimeMillis == o2.createTimeMillis) return 0;
+                    return o2.createTimeMillis > o1.createTimeMillis ? -1 : 1;
+                }).orElse(null);
+        if (pidFileStruct != null) {
+            return pidFileStruct.pid;
+        }
+        throw new HotswapException("pid查找失败");
+    }
+
     public static String copyToLocal(InputStream inputStream, String fileName) throws IOException {
-        File file = new File(homePath, "hotswap-libs");
+        File file = new File(homePath, "libs");
         if (!file.exists()) {
-            file.mkdir();
+            file.mkdirs();
         }
         File targetFile = new File(file, fileName);
         Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -77,6 +130,8 @@ public class ProjectUtil {
                 process = Runtime.getRuntime().exec("netstat -ano | findstr " + p);
             } else if (OsUtil.isLinux()) {
                 process = Runtime.getRuntime().exec("netstat -tunlp | grep " + p);
+            } else if (OsUtil.isMacOs()) {
+                process = Runtime.getRuntime().exec("sudo lsof -i tcp:" + p);
             } else {
                 return p;
             }
