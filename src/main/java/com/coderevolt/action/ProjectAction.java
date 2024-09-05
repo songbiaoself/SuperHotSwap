@@ -3,6 +3,7 @@ package com.coderevolt.action;
 import com.coderevolt.HotswapException;
 import com.coderevolt.handler.Handler;
 import com.coderevolt.handler.HandlerStrategyFactory;
+import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.util.IdeaNotifyUtil;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -45,7 +46,7 @@ public class ProjectAction extends AnAction {
                     try {
                         handler.execute(e);
                     } catch (HotswapException ex) {
-                        ex.printStackTrace();
+                        ex.printStackTrace(SystemLogCollect.getErrStreamWrapper());
                         IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
                     }
                 });

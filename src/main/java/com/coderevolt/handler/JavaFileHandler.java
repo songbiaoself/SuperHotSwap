@@ -6,6 +6,7 @@ import com.coderevolt.connect.Connector;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.JavaClassHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
+import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.util.IdeaNotifyUtil;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -49,6 +50,7 @@ public class JavaFileHandler implements Handler{
                 IdeaNotifyUtil.notify("[" + processName + "]：" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
             });
         } catch (Exception exception) {
+            exception.printStackTrace(SystemLogCollect.getErrStreamWrapper());
             throw new HotswapException(exception.getMessage(), exception);
         }
     }

@@ -3,6 +3,7 @@ package com.coderevolt.listener;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.context.VirtualMachineContext;
+import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.util.IdeaNotifyUtil;
 import com.coderevolt.util.ProjectUtil;
 import com.coderevolt.util.StrUtil;
@@ -47,20 +48,26 @@ public class ProjectExecutionListener implements ExecutionListener {
             new LinkedBlockingQueue<>(),
             r -> new Thread(r, "ExecutionListener线程"));
 
+    static {
+        SystemLogCollect.injectStandardStream();
+    }
+
 
     @Override
     public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler) {
         ExecutionListener.super.processStarted(executorId, env, handler);
         EXECUTOR_THREAD_POOL.execute(() -> {
             String error = null;
+            int i = 1;
             // 尝试三次，jvm.dll加载完成后attach
-            for (int i = 0; i < 3; i++) {
+            for (; i <= 3; i++) {
                 try {
-                    if (StrUtil.isEmpty(getAgentJarPath())) {
-                        return;
-                    }
                     RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
                     if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
+                        return;
+                    }
+                    if (StrUtil.isEmpty(getAgentJarPath())) {
+                        System.err.println("获取agent jar路径失败");
                         return;
                     }
                     String runProfileName = runProfile.getName();
@@ -75,19 +82,27 @@ public class ProjectExecutionListener implements ExecutionListener {
                     machineBeanInfo.setPort(port);
                     machineBeanInfo.setPid(pid);
                     VirtualMachineContext.put(runProfileName, machineBeanInfo);
+                    System.out.println("开始attach，agentJar地址：" + agentJarPath + "，端口号：" + port);
                     virtualMachine.loadAgent(agentJarPath, port + "");
                     virtualMachine.detach();
                     error = null;
                     break;
                 } catch (AttachNotSupportedException | IOException | HotswapException e) {
                     System.err.println("attach异常");
-                    e.printStackTrace();
+                    e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
                     error = e.getMessage();
                 } catch (AgentLoadException | AgentInitializationException e) {
                     if (!e.getMessage().equals("0")) {
                         System.err.println("agent挂载异常");
-                        e.printStackTrace();
+                        e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
                         error = e.getMessage();
+                    } else if ("Agent JAR not found".equals(e.getMessage())) {
+                        try {
+                            getAgentJarPath();
+                        } catch (IOException ex) {
+                            System.err.println("加载 agent jar 失败");
+                            ex.printStackTrace(SystemLogCollect.getErrStreamWrapper());
+                        }
                     } else {
                         error = null;
                         break;
@@ -96,11 +111,13 @@ public class ProjectExecutionListener implements ExecutionListener {
                 try {
                     TimeUnit.MILLISECONDS.sleep(500);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
                 }
             }
             if (error != null) {
                 IdeaNotifyUtil.notify(error, NotificationType.ERROR);
+            } else {
+                System.out.println("attach成功，尝试次数：" + i);
             }
         });
     }
@@ -112,7 +129,7 @@ public class ProjectExecutionListener implements ExecutionListener {
         return specialClassName.contains(".") ? specialClassName.substring(specialClassName.lastIndexOf(".") + 1) : specialClassName;
     }
 
-    private static String getAgentJarPath() throws IOException {
+    public static String getAgentJarPath() throws IOException {
         if (agentJarPath == null) {
             synchronized (ProjectExecutionListener.class) {
                 if (agentJarPath == null) {
@@ -138,6 +155,7 @@ public class ProjectExecutionListener implements ExecutionListener {
             getPidMethod.setAccessible(true);
             return String.valueOf(getPidMethod.invoke(process));
         } catch (Exception e) {
+            e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
             throw new HotswapException("反射获取pid失败", e);
         }
     }
@@ -150,6 +168,7 @@ public class ProjectExecutionListener implements ExecutionListener {
             if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
                 return;
             }
+            System.out.println("进程销毁，回收上下文信息：" + runProfile.getName());
             VirtualMachineContext.remove(runProfile.getName());
         });
     }

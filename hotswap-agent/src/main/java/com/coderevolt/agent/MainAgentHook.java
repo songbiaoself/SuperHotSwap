@@ -3,10 +3,7 @@ package com.coderevolt.agent;
 import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.server.RPCServer;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.instrument.Instrumentation;
 
 /**
@@ -54,10 +51,16 @@ public class MainAgentHook {
                     "                | |                                                           | |    \n" +
                     "                |_|                                                           |_|    ");
             System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: " + version + "，link: https://mp.weixin.qq.com/s/QPviEak1uvmJlDcB4I-3ZQ");
+            String logPath = "file:///" + (System.getProperty("user.home") + File.separator + "SuperHotSwap/log");
+            System.out.println("SuperHotSwap日志路径：" + logPath.replace("\\", "/"));
         } catch (IOException e) {
             System.err.println("rpc服务端启动失败");
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.println("SuperHotSwap日志：" + System.getProperty("user.home") + File.pathSeparatorChar + "SuperHotSwap/log");
     }
 
 

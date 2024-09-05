@@ -5,6 +5,7 @@ import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
 import com.coderevolt.api.AgentApi;
 import com.coderevolt.context.MachineBeanInfo;
+import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.proxy.GeneratorProxy;
 import com.coderevolt.util.CacheMap;
 import com.coderevolt.utils.RpcInfo;
@@ -54,9 +55,10 @@ public class Connector {
                             rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
                             cache.put(vm.getPid(), rpcProxy, 1, TimeUnit.HOURS);
                         }
+                        System.out.println("发送指令: " + command);
                         consumer.accept(rpcProxy.execute(command));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
                         System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，pid: " + vm.getPid() + "，异常: " + e.getMessage());
                     }
                 });
