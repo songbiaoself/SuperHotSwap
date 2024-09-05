@@ -6,6 +6,7 @@ import com.coderevolt.HotswapException;
 import com.coderevolt.api.AgentApi;
 import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.proxy.GeneratorProxy;
+import com.coderevolt.util.CacheMap;
 import com.coderevolt.utils.RpcInfo;
 
 import java.util.Collection;
@@ -28,10 +29,11 @@ public class Connector {
             new LinkedBlockingQueue<>(),
             r -> new Thread(r, "Command线程"));
 
+    private static final CacheMap<String, AgentApi> cache = new CacheMap<>();
+
     static {
         COMMAND_THREAD_POOL.allowCoreThreadTimeOut(true);
     }
-
 
     /**
      * 发送命令给所有进程
@@ -47,7 +49,11 @@ public class Connector {
                     try {
                         // 获取rpc连接
                         Class<AgentApi> agentApiClass = AgentApi.class;
-                        AgentApi rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
+                        AgentApi rpcProxy = cache.get(vm.getPid());
+                        if (rpcProxy == null) {
+                            rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
+                            cache.put(vm.getPid(), rpcProxy, 1, TimeUnit.HOURS);
+                        }
                         consumer.accept(rpcProxy.execute(command));
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -57,5 +63,8 @@ public class Connector {
             }
         }
     }
+
+
+
 
 }

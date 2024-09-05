@@ -52,38 +52,55 @@ public class ProjectExecutionListener implements ExecutionListener {
     public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler) {
         ExecutionListener.super.processStarted(executorId, env, handler);
         EXECUTOR_THREAD_POOL.execute(() -> {
-            try {
-                if (StrUtil.isEmpty(getAgentJarPath())) {
-                    return;
-                }
-                RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
-                if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
-                    return;
-                }
-                String runProfileName = runProfile.getName();
-                String pid = getPid(handler);
-                int port = ProjectUtil.findAvailablePort();
+            String error = null;
+            // 尝试三次，jvm.dll加载完成后attach
+            for (int i = 0; i < 3; i++) {
+                try {
+                    if (StrUtil.isEmpty(getAgentJarPath())) {
+                        return;
+                    }
+                    RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
+                    if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
+                        return;
+                    }
+                    String runProfileName = runProfile.getName();
+                    String pid = getPid(handler);
+                    int port = ProjectUtil.findAvailablePort();
 
-                VirtualMachine virtualMachine = VirtualMachine.attach(pid);
-                MachineBeanInfo machineBeanInfo = new MachineBeanInfo();
-                machineBeanInfo.setProcessName(runProfileName);
-                machineBeanInfo.setVirtualMachine(virtualMachine);
-                machineBeanInfo.setIp("127.0.0.1");
-                machineBeanInfo.setPort(port);
-                machineBeanInfo.setPid(pid);
-                VirtualMachineContext.put(runProfileName, machineBeanInfo);
-                virtualMachine.loadAgent(agentJarPath, port + "");
-                virtualMachine.detach();
-            } catch (AttachNotSupportedException | IOException | HotswapException e) {
-                System.err.println("attach异常");
-                e.printStackTrace();
-                IdeaNotifyUtil.notify(e.getMessage(), NotificationType.ERROR);
-            } catch (AgentLoadException | AgentInitializationException e) {
-                if (!e.getMessage().equals("0")) {
-                    System.err.println("agent挂载异常");
+                    VirtualMachine virtualMachine = VirtualMachine.attach(pid);
+                    MachineBeanInfo machineBeanInfo = new MachineBeanInfo();
+                    machineBeanInfo.setProcessName(runProfileName);
+                    machineBeanInfo.setVirtualMachine(virtualMachine);
+                    machineBeanInfo.setIp("127.0.0.1");
+                    machineBeanInfo.setPort(port);
+                    machineBeanInfo.setPid(pid);
+                    VirtualMachineContext.put(runProfileName, machineBeanInfo);
+                    virtualMachine.loadAgent(agentJarPath, port + "");
+                    virtualMachine.detach();
+                    error = null;
+                    break;
+                } catch (AttachNotSupportedException | IOException | HotswapException e) {
+                    System.err.println("attach异常");
                     e.printStackTrace();
-                    IdeaNotifyUtil.notify(e.getMessage(), NotificationType.ERROR);
+                    error = e.getMessage();
+                } catch (AgentLoadException | AgentInitializationException e) {
+                    if (!e.getMessage().equals("0")) {
+                        System.err.println("agent挂载异常");
+                        e.printStackTrace();
+                        error = e.getMessage();
+                    } else {
+                        error = null;
+                        break;
+                    }
                 }
+                try {
+                    TimeUnit.MILLISECONDS.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (error != null) {
+                IdeaNotifyUtil.notify(error, NotificationType.ERROR);
             }
         });
     }

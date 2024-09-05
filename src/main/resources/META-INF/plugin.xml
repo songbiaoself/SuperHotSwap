@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.coderevolt.super-hotswap</id>
     <name>SuperHotSwap</name>
-    <vendor email="646997146@qq.com" url="https://song_biao.gitee.io">CodeRevolt</vendor>
+    <vendor email="646997146@qq.com" url="https://songbiaoself.github.io/">CodeRevolt</vendor>
 
     <description>It aims to realize the most convenient IDEA hot update plug-in, reduce user operation steps, and provide zero-configuration visual operation updates. Currently, hot updates of MapperXML and Java files are supported. The details are similar to update records. Public account: CodeRevolt, which updates high-quality CS articles from time to time.</description>
 

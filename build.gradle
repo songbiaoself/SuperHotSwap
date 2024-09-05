@@ -3,8 +3,11 @@ plugins {
     id 'java'
 }
 
+// 指定版本文件的路径
+def versionFile = file('hotswap-agent/src/main/resources/version.txt')
+
 group 'com.coderevolt'
-version '1.8.0'
+version versionFile.text.trim()
 
 repositories {
     mavenLocal()
@@ -67,7 +70,7 @@ patchPluginXml {
     
     <b>版本1.8</b>
     <ol>
-        <li>**重大更新，建议升级到该版本**</li>
+        <li><b>重大更新，建议升级到该版本</b></li>
         <li>class方法热更新支持lombok</li>
         <li>更新获取pid的方式</li>
         <li>多线程参数优化</li>

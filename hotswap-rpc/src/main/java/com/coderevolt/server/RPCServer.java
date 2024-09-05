@@ -9,9 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static java.lang.invoke.MethodHandles.lookup;
 
@@ -21,20 +18,9 @@ import static java.lang.invoke.MethodHandles.lookup;
  */
 public class RPCServer {
 
-    private static final ThreadPoolExecutor SERVER_THREAD_POOL = new ThreadPoolExecutor(2,
-            Integer.MAX_VALUE,
-            30,
-            TimeUnit.MINUTES,
-            new LinkedBlockingQueue<>(),
-            r -> new Thread(r, "RPC服务端线程"));
-
-    static {
-        SERVER_THREAD_POOL.allowCoreThreadTimeOut(true);
-    }
-
     public static void start(int port) throws IOException {
         ServerSocket serverSocket = new ServerSocket(port);
-        SERVER_THREAD_POOL.execute(() -> {
+        new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     Socket socket = serverSocket.accept();
@@ -57,7 +43,7 @@ public class RPCServer {
                     e.printStackTrace();
                 }
             }
-        });
+        }, "RPC服务端线程["+port+"]").start();
     }
 
     /**

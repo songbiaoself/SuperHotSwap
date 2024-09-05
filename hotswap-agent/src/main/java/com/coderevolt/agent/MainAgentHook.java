@@ -3,7 +3,10 @@ package com.coderevolt.agent;
 import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.server.RPCServer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.instrument.Instrumentation;
 
 /**
@@ -34,6 +37,14 @@ public class MainAgentHook {
             int port = Integer.parseInt(agentArgs);
             RPCServer.start(port);
             AgentContextHolder.init(port, inst);
+            String version = null;
+            try (
+                InputStream resourceAsStream = MainAgentHook.class.getResourceAsStream("/version.txt");
+                InputStreamReader streamReader = new InputStreamReader(resourceAsStream);
+                BufferedReader bufferedReader = new BufferedReader(streamReader);
+            ){
+                version = bufferedReader.readLine().trim();
+            }
             System.out.println("   _____                            _    _         _     _____                       \n" +
                     "  / ____|                          | |  | |       | |   / ____|                      \n" +
                     " | (___   _   _  _ __    ___  _ __ | |__| |  ___  | |_ | (___ __      __ __ _  _ __  \n" +
@@ -42,7 +53,7 @@ public class MainAgentHook {
                     " |_____/  \\__,_|| .__/  \\___||_|   |_|  |_| \\___/  \\__||_____/  \\_/\\_/  \\__,_|| .__/ \n" +
                     "                | |                                                           | |    \n" +
                     "                |_|                                                           |_|    ");
-            System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: 1.8.0，link: https://mp.weixin.qq.com/s/QPviEak1uvmJlDcB4I-3ZQ");
+            System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: " + version + "，link: https://mp.weixin.qq.com/s/QPviEak1uvmJlDcB4I-3ZQ");
         } catch (IOException e) {
             System.err.println("rpc服务端启动失败");
             e.printStackTrace();
