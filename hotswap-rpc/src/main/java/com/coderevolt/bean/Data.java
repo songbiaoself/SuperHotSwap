@@ -16,6 +16,7 @@ public class Data implements Serializable {
 
     /**
      * 接口实现class类名
+     *
      * @see Class#getSimpleName()
      */
     private String name;
@@ -31,7 +32,7 @@ public class Data implements Serializable {
     private String methodName;
 
     /**
-     *参数类型
+     * 参数类型
      */
     private Class[] parameterTypes;
 

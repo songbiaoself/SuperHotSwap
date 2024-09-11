@@ -2,6 +2,7 @@ package com.coderevolt.agent;
 
 import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.server.RPCServer;
+import com.coderevolt.util.AgentUtil;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
@@ -15,6 +16,7 @@ public class MainAgentHook {
 
     /**
      * javaAgent回调
+     *
      * @param agentArgs
      * @param inst
      */
@@ -26,20 +28,21 @@ public class MainAgentHook {
 
     /**
      * attach回调方法
+     *
      * @param agentArgs
      * @param inst
      */
-    public static void agentmain (String agentArgs, Instrumentation inst) {
+    public static void agentmain(String agentArgs, Instrumentation inst) {
         try {
             int port = Integer.parseInt(agentArgs);
             RPCServer.start(port);
             AgentContextHolder.init(port, inst);
             String version = null;
             try (
-                InputStream resourceAsStream = MainAgentHook.class.getResourceAsStream("/version.txt");
-                InputStreamReader streamReader = new InputStreamReader(resourceAsStream);
-                BufferedReader bufferedReader = new BufferedReader(streamReader);
-            ){
+                    InputStream resourceAsStream = MainAgentHook.class.getResourceAsStream("/version.txt");
+                    InputStreamReader streamReader = new InputStreamReader(resourceAsStream);
+                    BufferedReader bufferedReader = new BufferedReader(streamReader);
+            ) {
                 version = bufferedReader.readLine().trim();
             }
             System.out.println("   _____                            _    _         _     _____                       \n" +
@@ -51,16 +54,12 @@ public class MainAgentHook {
                     "                | |                                                           | |    \n" +
                     "                |_|                                                           |_|    ");
             System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: " + version + "，link: https://mp.weixin.qq.com/s/QPviEak1uvmJlDcB4I-3ZQ");
-            String logPath = "file:///" + (System.getProperty("user.home") + File.separator + "SuperHotSwap/log");
-            System.out.println("SuperHotSwap日志路径：" + logPath.replace("\\", "/"));
+            String logPath = AgentUtil.homePath + File.separator + "log";;
+            System.out.println("SuperHotSwap日志路径：file:///" + logPath.replace("\\", "/"));
         } catch (IOException e) {
             System.err.println("rpc服务端启动失败");
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
-        System.out.println("SuperHotSwap日志：" + System.getProperty("user.home") + File.pathSeparatorChar + "SuperHotSwap/log");
     }
 
 

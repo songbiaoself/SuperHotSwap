@@ -12,6 +12,7 @@ public interface AgentApi<T, R> {
 
     /**
      * 执行指令
+     *
      * @param agentCommand
      * @return
      */

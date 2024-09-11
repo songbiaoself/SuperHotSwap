@@ -31,7 +31,7 @@ dependencies {
     implementation(project(":hotswap-common"))
     implementation(project(":hotswap-api"))
     implementation(project(":hotswap-rpc"))
-    compileOnly(files("./tools.jar"))
+    compileOnly(files("hotswap-agent/libs/tools.jar"))
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
@@ -70,10 +70,18 @@ patchPluginXml {
     
     <b>版本1.8</b>
     <ol>
-        <li><b>重大更新，建议升级到该版本</b></li>
         <li>class方法热更新支持lombok</li>
         <li>更新获取pid的方式</li>
         <li>多线程参数优化</li>
+        <li>==========1.8.1===========<li>
+        <li>添加插件日志收集</li>
+        <li>支持动态编译新增类</li>
+    </ol>
+    
+    <b>版本1.9</b>
+     <ol>
+        <li>支持spring热更新（注册、销毁、动态mapping)</li>
+        <li>修复已知存在问题</li>
     </ol>
     """
 }

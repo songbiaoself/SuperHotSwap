@@ -31,27 +31,35 @@ import java.util.regex.Pattern;
 
 /**
  * 程序启动关闭监听
+ *
  * @author 公众号:codeRevolt
  */
 public class ProjectExecutionListener implements ExecutionListener {
 
-    private static String agentJarPath;
-
     private static final Pattern javaExeRegex = Pattern.compile("^(.*?)java.exe");
-
     private static final String[] runTypeList = new String[]{"application", "spring boot", "jar application"};
-
     private static final ExecutorService EXECUTOR_THREAD_POOL = new ThreadPoolExecutor(2,
             Integer.MAX_VALUE,
             0,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
             r -> new Thread(r, "ExecutionListener线程"));
+    private static String agentJarPath;
 
     static {
         SystemLogCollect.injectStandardStream();
     }
 
+    public static String getAgentJarPath() throws IOException {
+        if (agentJarPath == null) {
+            synchronized (ProjectExecutionListener.class) {
+                if (agentJarPath == null) {
+                    agentJarPath = ProjectUtil.copyToLocal(ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar"), "hotswap-agent.jar");
+                }
+            }
+        }
+        return agentJarPath;
+    }
 
     @Override
     public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler) {
@@ -70,8 +78,8 @@ public class ProjectExecutionListener implements ExecutionListener {
                         System.err.println("获取agent jar路径失败");
                         return;
                     }
-                    String runProfileName = runProfile.getName();
                     String pid = getPid(handler);
+                    String runProfileName = runProfile.getName() + "("+pid+")";
                     int port = ProjectUtil.findAvailablePort();
 
                     VirtualMachine virtualMachine = VirtualMachine.attach(pid);
@@ -129,17 +137,6 @@ public class ProjectExecutionListener implements ExecutionListener {
         return specialClassName.contains(".") ? specialClassName.substring(specialClassName.lastIndexOf(".") + 1) : specialClassName;
     }
 
-    public static String getAgentJarPath() throws IOException {
-        if (agentJarPath == null) {
-            synchronized (ProjectExecutionListener.class) {
-                if (agentJarPath == null) {
-                    agentJarPath = ProjectUtil.copyToLocal(ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar"), "hotswap-agent.jar");
-                }
-            }
-        }
-        return agentJarPath;
-    }
-
     private String getJavaBinDir(ExecutionEnvironment env) {
         RunContentDescriptor contentToReuse = env.getContentToReuse();
         String commandLine = contentToReuse.getProcessHandler().toString();
@@ -168,9 +165,17 @@ public class ProjectExecutionListener implements ExecutionListener {
             if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
                 return;
             }
-            System.out.println("进程销毁，回收上下文信息：" + runProfile.getName());
-            VirtualMachineContext.remove(runProfile.getName());
+            try {
+                String pid = getPid(handler);
+                String name = runProfile.getName() + "(" + pid + ")";
+                System.out.println("进程销毁，回收上下文信息：" + name);
+                VirtualMachineContext.remove(name);
+            } catch (HotswapException e) {
+                e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
+            }
         });
     }
+
+
 
 }

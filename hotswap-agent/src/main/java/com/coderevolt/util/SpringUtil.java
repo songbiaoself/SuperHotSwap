@@ -6,16 +6,26 @@ package com.coderevolt.util;
  * @description
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Spring(Spring boot)工具封装，包括：
@@ -31,9 +41,7 @@ import java.util.Map;
 @Component
 public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextAware {
 
-    public SpringUtil() {
-        System.out.println("[SuperHotSwap]初始化Spring上下文容器");
-    }
+    private static final Logger logger = LoggerFactory.getLogger(SpringUtil.class);
 
     /**
      * "@PostConstruct"注解标记的类中，由于ApplicationContext还未加载，导致空指针<br>
@@ -44,17 +52,8 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
      * Spring应用上下文环境
      */
     private static ApplicationContext applicationContext;
-
-    @SuppressWarnings("NullableProblems")
-    @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        SpringUtil.beanFactory = beanFactory;
-    }
-
-    @SuppressWarnings("NullableProblems")
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        SpringUtil.applicationContext = applicationContext;
+    public SpringUtil() {
+        logger.info("[SuperHotSwap]初始化Spring上下文容器");
     }
 
     /**
@@ -64,6 +63,20 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
      */
     public static ApplicationContext getApplicationContext() {
         return applicationContext;
+    }
+
+    @SuppressWarnings("NullableProblems")
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        SpringUtil.applicationContext = applicationContext;
+    }
+
+    /**
+     * 是否是spring环境
+     * @return
+     */
+    public static boolean isSpringProfile() {
+        return applicationContext != null || beanFactory != null;
     }
 
     /**
@@ -99,7 +112,26 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
         return factory;
     }
 
-    //通过name获取 Bean.
+    /**
+     * 注册bean
+     * @param beanName
+     * @param clz
+     */
+    public static void registerBean(String beanName, Class<?> clz)  {
+        DefaultListableBeanFactory factory = (DefaultListableBeanFactory) getConfigurableBeanFactory();
+        BeanDefinitionBuilder beanDefinition = BeanDefinitionBuilder.genericBeanDefinition(clz);
+        factory.registerBeanDefinition(beanName, beanDefinition.getRawBeanDefinition());
+    }
+
+    /**
+     * 销毁bean
+     * @param beanName
+     */
+    public static void destroyBean(String beanName) {
+        DefaultListableBeanFactory factory = (DefaultListableBeanFactory) getConfigurableBeanFactory();
+        factory.removeBeanDefinition(beanName);
+        factory.destroySingleton(beanName);
+    }
 
     /**
      * 通过name获取 Bean
@@ -113,6 +145,8 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
         return (T) getBeanFactory().getBean(name);
     }
 
+    //通过name获取 Bean.
+
     /**
      * 通过class获取Bean
      *
@@ -124,28 +158,18 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
         return getBeanFactory().getBean(clazz);
     }
 
-
     /**
-     * 获取指定类型对应的所有Bean，包括子类
-     *
-     * @param <T>  Bean类型
-     * @param type 类、接口，null表示获取所有bean
-     * @return 类型对应的bean，key是bean注册的name，value是Bean
-     * @since 5.3.3
+     * 是否包含bean
+     * @param clazz
+     * @return
      */
-    public static <T> Map<String, T> getBeansOfType(Class<T> type) {
-        return getBeanFactory().getBeansOfType(type);
-    }
-
-    /**
-     * 获取指定类型对应的Bean名称，包括子类
-     *
-     * @param type 类、接口，null表示获取所有bean名称
-     * @return bean名称
-     * @since 5.3.3
-     */
-    public static String[] getBeanNamesForType(Class<?> type) {
-        return getBeanFactory().getBeanNamesForType(type);
+    public static boolean hasBean(Class<?> clazz) {
+        try {
+            getBeanFactory().getBean(clazz);
+        } catch (NoSuchBeanDefinitionException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -163,38 +187,6 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
     }
 
     /**
-     * 获取配置文件配置项的值
-     *
-     * @param key          配置项key
-     * @param defaultValue 默认值
-     * @return 属性值
-     * @since 5.8.24
-     */
-    public static String getProperty(String key, String defaultValue) {
-        if (null == applicationContext) {
-            return null;
-        }
-        return applicationContext.getEnvironment().getProperty(key, defaultValue);
-    }
-
-    /**
-     * 获取配置文件配置项的值
-     *
-     * @param <T>          属性值类型
-     * @param key          配置项key
-     * @param targetType   配置项类型
-     * @param defaultValue 默认值
-     * @return 属性值
-     * @since 5.8.24
-     */
-    public static <T> T getProperty(String key, Class<T> targetType, T defaultValue) {
-        if (null == applicationContext) {
-            return null;
-        }
-        return applicationContext.getEnvironment().getProperty(key, targetType, defaultValue);
-    }
-
-    /**
      * 获取应用程序名称
      *
      * @return 应用程序名称
@@ -202,6 +194,56 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
      */
     public static String getApplicationName() {
         return getProperty("spring.application.name");
+    }
+
+    @SuppressWarnings("NullableProblems")
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        SpringUtil.beanFactory = beanFactory;
+    }
+
+    /**
+     * 添加mapping url映射
+     * @param clazz
+     */
+    public static void addMapping(Class<?> clazz) {
+        RequestMappingHandlerMapping rmm = getBean("requestMappingHandlerMapping");
+        Method method= null;
+        try {
+            method = rmm.getClass().getSuperclass().getSuperclass().getDeclaredMethod("detectHandlerMethods",Object.class);
+            method.setAccessible(true);
+            method.invoke(rmm, getBean(clazz));
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 删除映射
+     * @param targetClass
+     */
+    public static void removeMapping(Class<?> targetClass) {
+        RequestMappingHandlerMapping rmm = getBean("requestMappingHandlerMapping");
+        if (!hasBean(targetClass)) {
+            throw new RuntimeException("No bean with name '" + targetClass.getName() + "' found!");
+        }
+        ReflectionUtils.doWithMethods(targetClass, new ReflectionUtils.MethodCallback() {
+            @Override
+            public void doWith(Method method) {
+                Method specificMethod = ClassUtils.getMostSpecificMethod(method, targetClass);
+                try {
+                    Class<?> aClass = rmm.getClass();
+                    Method createMappingMethod = aClass.getDeclaredMethod("getMappingForMethod", Method.class, Class.class);
+                    createMappingMethod.setAccessible(true);
+                    RequestMappingInfo requestMappingInfo = (RequestMappingInfo) createMappingMethod.invoke(rmm,specificMethod,targetClass);
+                    if(requestMappingInfo != null) {
+                        rmm.unregisterMapping(requestMappingInfo);
+                    }
+                }catch (Exception e){
+                   throw new RuntimeException(e);
+                }
+            }
+        }, ReflectionUtils.USER_DECLARED_METHODS);
     }
 
 

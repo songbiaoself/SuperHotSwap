@@ -32,7 +32,7 @@ public class RPCServer {
                         //接受客户端数据
                         ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
                         Data receiveData = (Data) objectInputStream.readObject();
-                        System.out.println("接收到[" + socket.getRemoteSocketAddress() + "]客户端数据:" + receiveData);
+//                        System.out.println("接收到[" + socket.getRemoteSocketAddress() + "]客户端数据:" + receiveData);
                         //反射调用
                         Object result = methodInvoke(receiveData);
                         //响应
@@ -43,22 +43,23 @@ public class RPCServer {
                     e.printStackTrace();
                 }
             }
-        }, "RPC服务端线程["+port+"]").start();
+        }, "RPC服务端线程[" + port + "]").start();
     }
 
     /**
      * 反射调用实现方法
+     *
      * @param data
      * @return
      */
-    public static Object methodInvoke(Data data){
+    public static Object methodInvoke(Data data) {
         //返回类型加参数类型
         MethodType methodType = MethodType.methodType(data.getReturnType(), data.getParameterTypes());
         try {
             //除了static方法 每个方法都有一个隐式参数this
             MethodHandle methodHandle = lookup().findVirtual(data.getType(), data.getMethodName(), methodType).bindTo(getRPCImpl(data));
             return methodHandle.invokeWithArguments(data.getArgs());
-        }catch (Throwable throwable) {
+        } catch (Throwable throwable) {
             throwable.printStackTrace();
         }
         return null;
@@ -67,6 +68,7 @@ public class RPCServer {
     /**
      * 获取rpc实现类
      * 通过SPI机制找出所有实现类，实际RPC中可以通过其他更复杂的方式减少操作步骤
+     *
      * @param data
      * @return
      */

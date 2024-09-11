@@ -11,12 +11,14 @@ public interface Handler {
 
     /**
      * 是否支持
+     *
      * @return
      */
     boolean isSupport(Object obj);
 
     /**
      * 执行
+     *
      * @param obj
      */
     void execute(Object obj) throws HotswapException;

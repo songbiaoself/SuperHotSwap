@@ -16,8 +16,22 @@ public class JavaClassHotswapDto implements Serializable {
      */
     private String javaFilePath;
 
-    public JavaClassHotswapDto(String javaFilePath) {
+    /**
+     * 全类名，例如: com.coderevolt.dto.JavaClassHotswapDto
+     */
+    private String fullClassName;
+
+    public JavaClassHotswapDto(String javaFilePath, String fullClassName) {
         this.javaFilePath = javaFilePath;
+        this.fullClassName = fullClassName;
+    }
+
+    public String getFullClassName() {
+        return fullClassName;
+    }
+
+    public void setFullClassName(String fullClassName) {
+        this.fullClassName = fullClassName;
     }
 
     public String getJavaFilePath() {
@@ -32,6 +46,7 @@ public class JavaClassHotswapDto implements Serializable {
     public String toString() {
         return "JavaClassHotswapDto{" +
                 "javaFilePath='" + javaFilePath + '\'' +
+                ", fullClassName='" + fullClassName + '\'' +
                 '}';
     }
 }

@@ -21,15 +21,17 @@ import java.util.stream.Collectors;
 
 /**
  * 核心逻辑
+ *
  * @author 公众号:codeRevolt
  */
 public class MapperHotswapPlugin {
 
     /**
      * 替换掉mybatis默认的strictMap，把put方法中的containsKey异常校验去掉
-     * @see Configuration.StrictMap
-     * @throws IllegalStateException 替换strictMap失败
+     *
      * @param configuration
+     * @throws IllegalStateException 替换strictMap失败
+     * @see Configuration.StrictMap
      */
     public static void swapStrictMap(Configuration configuration) {
         Class<? extends Configuration> configurationClass = configuration.getClass();
@@ -46,7 +48,7 @@ public class MapperHotswapPlugin {
                 StrictMap<Object> strictMap = new StrictMap<>(f + " collection");
                 entrySet.forEach(s -> strictMap.put(String.valueOf(s.getKey()), s.getValue()));
                 field.set(configuration, strictMap);
-            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException  e) {
+            } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 throw new IllegalStateException("替换strictMap失败:" + e.getMessage(), e);
             }
         });
@@ -54,9 +56,10 @@ public class MapperHotswapPlugin {
 
     /**
      * 重新加载mapper的xml文件，并重新解析
+     *
      * @param configuration
-     * @param xmlResource 类路径开始：self/sn/main/mapper/UserMapper.xml
-     * @param type mapper类
+     * @param xmlResource   类路径开始：self/sn/main/mapper/UserMapper.xml
+     * @param type          mapper类
      */
     public static void reloadMapperXml(Configuration configuration, String xmlResource, Class type) throws HotswapException {
         Set<String> loadedResources = getLoadedResources(configuration);
@@ -113,7 +116,7 @@ public class MapperHotswapPlugin {
             field.setAccessible(true);
             return (Set<String>) field.get(configuration);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new HotswapException("获取loadedResources集合失败",  e);
+            throw new HotswapException("获取loadedResources集合失败", e);
         }
     }
 
@@ -147,11 +150,8 @@ public class MapperHotswapPlugin {
          * <p>
          * function arguments are 1st is saved value and 2nd is target value.
          *
-         * @param conflictMessageProducer
-         *          A function for producing a conflict error message
-         *
+         * @param conflictMessageProducer A function for producing a conflict error message
          * @return a conflict error message
-         *
          * @since 3.5.0
          */
         public StrictMap<V> conflictMessageProducer(BiFunction<V, V, String> conflictMessageProducer) {
@@ -195,6 +195,11 @@ public class MapperHotswapPlugin {
             return value;
         }
 
+        private String getShortName(String key) {
+            final String[] keyParts = key.split("\\.");
+            return keyParts[keyParts.length - 1];
+        }
+
         protected static class Ambiguity {
             private final String subject;
 
@@ -205,11 +210,6 @@ public class MapperHotswapPlugin {
             public String getSubject() {
                 return subject;
             }
-        }
-
-        private String getShortName(String key) {
-            final String[] keyParts = key.split("\\.");
-            return keyParts[keyParts.length - 1];
         }
 
     }

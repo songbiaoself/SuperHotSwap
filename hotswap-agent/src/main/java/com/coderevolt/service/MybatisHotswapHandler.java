@@ -19,7 +19,7 @@ import java.nio.file.StandardCopyOption;
  * @date 2024/4/20 18:33
  * @description
  */
-public class MybatisHotswapHandler implements HotswapHandler{
+public class MybatisHotswapHandler implements HotswapHandler {
 
     private boolean isSwapStrictMap = false;
 

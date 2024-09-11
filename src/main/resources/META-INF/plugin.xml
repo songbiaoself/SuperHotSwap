@@ -3,7 +3,11 @@
     <name>SuperHotSwap</name>
     <vendor email="646997146@qq.com" url="https://songbiaoself.github.io/">CodeRevolt</vendor>
 
-    <description>It aims to realize the most convenient IDEA hot update plug-in, reduce user operation steps, and provide zero-configuration visual operation updates. Currently, hot updates of MapperXML and Java files are supported. The details are similar to update records. Public account: CodeRevolt, which updates high-quality CS articles from time to time.</description>
+    <description>It aims to realize the most convenient IDEA hot update plug-in, reduce user operation steps, and
+        provide zero-configuration visual operation updates. Currently, hot updates of MapperXML and Java files are
+        supported. The details are similar to update records. Public account: CodeRevolt, which updates high-quality CS
+        articles from time to time.
+    </description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
          on how to target different products -->
@@ -12,7 +16,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
         <!--notify 2020.3版本后需在plugin中注册-->
-        <notificationGroup displayType="BALLOON" id="notifyAction" />
+        <notificationGroup displayType="BALLOON" id="notifyAction"/>
     </extensions>
 
     <projectListeners>

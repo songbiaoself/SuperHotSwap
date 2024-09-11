@@ -13,10 +13,6 @@ public class ProjectUtil {
 
     public static final String homePath = System.getProperty("user.home") + File.separator + "SuperHotSwap";
 
-    public static void main(String[] args) {
-        System.out.println(homePath);
-    }
-
     public static String copyToLocal(InputStream inputStream, String fileName) throws IOException {
         File file = new File(homePath, "libs");
         if (!file.exists()) {

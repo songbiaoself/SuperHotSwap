@@ -1,5 +1,7 @@
 package com.coderevolt.util;
 
+import com.coderevolt.HotswapException;
+import com.coderevolt.dto.JavaClassHotswapDto;
 import com.coderevolt.javac.JavaStringCompiler;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.tree.JCTree;
@@ -8,11 +10,14 @@ import com.sun.tools.javac.util.Options;
 
 import javax.annotation.processing.Processor;
 import java.io.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -25,10 +30,13 @@ public class AgentUtil {
 
     private static final JavaStringCompiler compiler = new JavaStringCompiler();
 
+    public static final String homePath = System.getProperty("user.home") + File.separator + "SuperHotSwap";
+
     private static final Pattern LOMBOK_PATTERN = Pattern.compile("import(\\s)+lombok.*\\.(.+);");
 
     /**
      * bfs搜索目录下的文件
+     *
      * @param dir
      * @param fileName
      * @return
@@ -37,7 +45,7 @@ public class AgentUtil {
     public static File searchFile(String dir, String fileName) throws FileNotFoundException {
         LinkedList<File> fileQueue = new LinkedList<>();
         fileQueue.offerFirst(new File(dir));
-        while (fileQueue.size() > 0) {
+        while (!fileQueue.isEmpty()) {
             File f = fileQueue.pollFirst();
             if (f.exists()) {
                 if (f.isDirectory()) {
@@ -67,27 +75,26 @@ public class AgentUtil {
 
     /**
      * 获取当前类的绝对类路径
+     *
      * @return
      */
     public static String getAbsClassPath(Class clz) {
-        String name = "/" + clz.getName().replace(".", "/") + ".class";
-        String path = clz.getResource(name).getPath();
-        name = name.replace("\\", File.separator).replace("/", File.separator);
+        String path = clz.getResource("/").getPath();
         path = path.replace("\\", File.separator).replace("/", File.separator);
-        path = path.substring(0, path.indexOf(name) + 1);
         return (OsUtil.isWindows() && path.startsWith(File.separator)) ? path.substring(1) : path;
     }
 
     /**
      * 编译java文件
-     * @param filePath
+     *
+     * @param javaClassHotswapDto
      * @return class字节码
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static Map<String, byte[]> compileJava(String filePath) throws IOException {
-        Path path = Paths.get(filePath);
-        if (supportLombok(path)) {
+    public static Map<String, byte[]> compileJava(JavaClassHotswapDto javaClassHotswapDto) throws IOException {
+        Path path = Paths.get(javaClassHotswapDto.getJavaFilePath());
+        if (useLombokCompile(path)) {
             try {
                 Context context = new Context();
                 //仅处理注解，不生成字节码
@@ -107,7 +114,7 @@ public class AgentUtil {
                 Class<? extends JavaCompiler> javaCompilerClass = javaCompiler.getClass();
                 // jdk8与jdk17initProcessAnnotations入参不同，gradle8.7需指定jdk11及以上，项目使用jdk8，兼容处理，否则gradle编译失败
                 javaCompilerClass.getMethod("initProcessAnnotations", Iterable.class).invoke(javaCompiler, iterable);
-                JCTree.JCCompilationUnit unit = javaCompiler.parse(filePath);
+                JCTree.JCCompilationUnit unit = javaCompiler.parse(javaClassHotswapDto.getJavaFilePath());
                 com.sun.tools.javac.util.List<JCTree.JCCompilationUnit> trees = javaCompiler.enterTrees(toJavacList(Arrays.asList(unit)));
                 javaCompilerClass.getMethod("processAnnotations", com.sun.tools.javac.util.List.class).invoke(javaCompiler, trees);
 
@@ -122,7 +129,20 @@ public class AgentUtil {
         return compiler.compile(path.getFileName().toString(), new String(Files.readAllBytes(path), StandardCharsets.UTF_8));
     }
 
-    private static boolean supportLombok(Path path) {
+    /**
+     * 加载class
+     *
+     * @param className  全类名
+     * @param classBytes 字节码
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public static Class<?> loadClass(String className, byte[] classBytes) throws IOException, ClassNotFoundException {
+        return compiler.loadClass(className, classBytes);
+    }
+
+    private static boolean useLombokCompile(Path path) {
         BufferedReader bufferedReader = null;
         try {
             Class.forName("lombok.launch.ShadowClassLoader");
@@ -158,4 +178,72 @@ public class AgentUtil {
         return out;
     }
 
+    /**
+     * 更新本地class字节码文件
+     *
+     * @param loadClass
+     * @param classByte
+     * @throws IOException
+     */
+    public static void freshClassFile(Class<?> loadClass, byte[] classByte) throws HotswapException {
+        try {
+            String name = loadClass.getName().replace(".", "/") + ".class";
+            name = name.replace("\\", File.separator).replace("/", File.separator);
+            File classFile = new File(getAbsClassPath(loadClass), name);
+            if (!classFile.getParentFile().exists()) {
+                classFile.getParentFile().mkdirs();
+            }
+            Files.write(classFile.toPath(), classByte, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (Exception e) {
+            throw new HotswapException("更新class文件失败", e);
+        }
+    }
+
+    /**
+     * 遍历注解链，是否存在注解
+     * @param object
+     * @param annotationClz
+     * @return
+     */
+    public static boolean existAnnotation(Object object, Class<? extends Annotation> annotationClz) {
+        // 手动遍历继承链检查注解
+        Queue<Annotation> queue = new LinkedList<>();
+        Set<Class<?>> cache = new HashSet<>();
+        List<Annotation> annotations = null;
+        if (object instanceof AnnotatedElement) {
+            annotations = Arrays.asList(((AnnotatedElement) object).getAnnotations());
+        } else {
+            annotations = Arrays.asList(object.getClass().getAnnotations());
+        }
+        for (Annotation annotation : annotations) {
+            if (!cache.contains(annotation.getClass())) {
+                queue.add(annotation);
+                cache.add(annotation.getClass());
+            }
+        }
+        while (!queue.isEmpty()) {
+            Class<? extends Annotation> anType = queue.poll().annotationType();
+            if (annotationClz.isAssignableFrom(anType)) {
+                return true;
+            }
+            if (!cache.contains(anType)) {
+                Annotation[] t = anType.getAnnotations();
+                for (Annotation annotation : t) {
+                    if (!cache.contains(annotation.getClass())) {
+                        queue.add(annotation);
+                        cache.add(annotation.getClass());
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isSpringProfile() {
+        try {
+            return SpringUtil.isSpringProfile();
+        } catch (Throwable e) {
+            return false;
+        }
+    }
 }

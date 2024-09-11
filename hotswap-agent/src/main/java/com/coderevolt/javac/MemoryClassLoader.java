@@ -7,27 +7,30 @@ import java.util.Map;
 
 /**
  * Load class from byte[] which is compiled in memory.
- * 
+ *
  * @author michael
  */
 class MemoryClassLoader extends URLClassLoader {
 
-	// class name to class bytes:
-	Map<String, byte[]> classBytes = new HashMap<String, byte[]>();
+    private static final Map<String, byte[]> classByteMap = new HashMap<>();
 
-	public MemoryClassLoader(Map<String, byte[]> classBytes) {
-		super(new URL[0], MemoryClassLoader.class.getClassLoader());
-		this.classBytes.putAll(classBytes);
-	}
+    // class name to class bytes:
+    public MemoryClassLoader() {
+        super(new URL[0], MemoryClassLoader.class.getClassLoader());
+    }
 
-	@Override
-	protected Class<?> findClass(String name) throws ClassNotFoundException {
-		byte[] buf = classBytes.get(name);
-		if (buf == null) {
-			return super.findClass(name);
-		}
-		classBytes.remove(name);
-		return defineClass(name, buf, 0, buf.length);
-	}
+    public void put(String className, byte[] bytes) {
+        classByteMap.put(className, bytes);
+    }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        byte[] buf = classByteMap.get(name);
+        if (buf == null) {
+            return super.findClass(name);
+        }
+        classByteMap.remove(name);
+        return defineClass(name, buf, 0, buf.length);
+    }
 
 }

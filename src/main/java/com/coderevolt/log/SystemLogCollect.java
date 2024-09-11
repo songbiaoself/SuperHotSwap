@@ -48,9 +48,8 @@ public class SystemLogCollect {
 
     static class PrintStreamWrapper extends PrintStream {
 
-        private final BufferedWriter bufferedWriter;
-
         private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyy-MM-dd HH:mm:ss.SSS");
+        private final BufferedWriter bufferedWriter;
 
         public PrintStreamWrapper(@NotNull OutputStream out, File logFile) throws IOException {
             super(out, true);
@@ -205,7 +204,7 @@ public class SystemLogCollect {
         private void write(String s) {
             try {
                 synchronized (bufferedWriter) {
-                    bufferedWriter.write("["+Thread.currentThread().getName()+"]");
+                    bufferedWriter.write("[" + Thread.currentThread().getName() + "]");
                     bufferedWriter.write(dateFormat.format(new Date()));
                     bufferedWriter.write(" : ");
                     bufferedWriter.write(s);
@@ -213,11 +212,9 @@ public class SystemLogCollect {
                         bufferedWriter.flush();
                     }
                 }
-            }
-            catch (InterruptedIOException x) {
+            } catch (InterruptedIOException x) {
                 Thread.currentThread().interrupt();
-            }
-            catch (IOException x) {
+            } catch (IOException x) {
                 x.printStackTrace(this);
             }
         }

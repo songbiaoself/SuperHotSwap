@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * @date 2024/4/25 16:32
  * @description
  */
-public class XmlFileHandler implements Handler{
+public class XmlFileHandler implements Handler {
 
     private static final String mapperClassRegex = "<mapper\\s+namespace\\s*=\\s*\"(.+)\">";
 

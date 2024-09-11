@@ -50,11 +50,11 @@ public class RPCProxy implements InvocationHandler {
     }
 
     public Class[] covertToClass(Object[] objects) {
-        if (objects == null || objects.length==0) {
+        if (objects == null || objects.length == 0) {
             return null;
         }
         Class[] classes = new Class[objects.length];
-        for (int i = 0; i < objects.length ; i++) {
+        for (int i = 0; i < objects.length; i++) {
             classes[i] = objects[i].getClass();
         }
         return classes;

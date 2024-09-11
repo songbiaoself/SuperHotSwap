@@ -11,7 +11,7 @@ public class OsUtil {
      * 判断操作系统是否是 Windows
      *
      * @return true：操作系统是 Windows
-     *         false：其它操作系统
+     * false：其它操作系统
      */
     public static boolean isWindows() {
         String osName = getOsName();
@@ -23,7 +23,7 @@ public class OsUtil {
      * 判断操作系统是否是 MacOS
      *
      * @return true：操作系统是 MacOS
-     *         false：其它操作系统
+     * false：其它操作系统
      */
     public static boolean isMacOs() {
         String osName = getOsName();
@@ -35,7 +35,7 @@ public class OsUtil {
      * 判断操作系统是否是 Linux
      *
      * @return true：操作系统是 Linux
-     *         false：其它操作系统
+     * false：其它操作系统
      */
     public static boolean isLinux() {
         String osName = getOsName();
@@ -45,6 +45,7 @@ public class OsUtil {
 
     /**
      * 获取操作系统名称
+     *
      * @return os.name 属性值
      */
     public static String getOsName() {

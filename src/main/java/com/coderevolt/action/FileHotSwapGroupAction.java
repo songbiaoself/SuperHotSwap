@@ -24,6 +24,6 @@ public class FileHotSwapGroupAction extends ActionGroup {
             actions.add(new ProjectAction(process.getProcessName()));
         }
         return actions.toArray(new AnAction[0]);
-}
+    }
 
 }

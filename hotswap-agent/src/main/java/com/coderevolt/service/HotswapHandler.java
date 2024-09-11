@@ -12,12 +12,14 @@ public interface HotswapHandler {
 
     /**
      * 检查当前环境
-     * @return  true表示正常，否则异常
+     *
+     * @return true表示正常，否则异常
      */
     boolean validateEnv() throws HotswapException;
 
     /**
      * 分派任务
+     *
      * @param command
      */
     void dispatch(AgentCommand command) throws HotswapException;

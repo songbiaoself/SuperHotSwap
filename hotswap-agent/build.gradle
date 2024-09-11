@@ -6,11 +6,17 @@ group 'com.coderevolt'
 version '1.0-SNAPSHOT'
 
 repositories {
+    mavenLocal()
+    maven {
+        url 'https://maven.aliyun.com/repository/public/'
+    }
     mavenCentral()
 }
 
 dependencies {
     compileOnly 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.3.0'
+    compileOnly 'org.springframework:spring-webmvc:5.3.24'
+    compileOnly 'org.slf4j:slf4j-api:2.0.12'
     implementation fileTree(dir: "/libs", includes: ['tools.jar'])
     implementation(project(":hotswap-common"))
     implementation(project(":hotswap-rpc"))

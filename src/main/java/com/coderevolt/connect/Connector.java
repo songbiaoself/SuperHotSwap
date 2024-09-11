@@ -38,12 +38,13 @@ public class Connector {
 
     /**
      * 发送命令给所有进程
-     * @param command 指令
-     * @param vmList 接收进程
+     *
+     * @param command  指令
+     * @param vmList   接收进程
      * @param consumer
      * @throws HotswapException
      */
-    public static void sendToProcess(AgentCommand command, Collection<MachineBeanInfo> vmList, Consumer<AgentResponse<Object>> consumer) throws HotswapException{
+    public static void sendToProcess(AgentCommand command, Collection<MachineBeanInfo> vmList, Consumer<AgentResponse<Object>> consumer) throws HotswapException {
         if (vmList != null && !vmList.isEmpty()) {
             for (MachineBeanInfo vm : vmList) {
                 COMMAND_THREAD_POOL.execute(() -> {
@@ -65,8 +66,6 @@ public class Connector {
             }
         }
     }
-
-
 
 
 }

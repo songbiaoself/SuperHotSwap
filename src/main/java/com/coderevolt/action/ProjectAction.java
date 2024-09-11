@@ -21,13 +21,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 文件热更新action
+ *
  * @author 公众号:codeRevolt
  */
 public class ProjectAction extends AnAction {
-
-    public ProjectAction(@Nullable @NlsActions.ActionText String text) {
-        super(text);
-    }
 
     private static final ExecutorService ACTION_THREAD_POOL = new ThreadPoolExecutor(2,
             Integer.MAX_VALUE,
@@ -35,6 +32,10 @@ public class ProjectAction extends AnAction {
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(),
             r -> new Thread(r, "action服务端线程"));
+
+    public ProjectAction(@Nullable @NlsActions.ActionText String text) {
+        super(text);
+    }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {

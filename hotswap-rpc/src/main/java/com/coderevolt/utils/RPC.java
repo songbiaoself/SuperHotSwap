@@ -13,19 +13,22 @@ import java.lang.annotation.Target;
 public @interface RPC {
     /**
      * 实现类名称
-     * @see java.lang.Class#getSimpleName()
+     *
      * @return
+     * @see java.lang.Class#getSimpleName()
      */
     String value();
 
     /**
      * 目标ip
+     *
      * @return
      */
     String ip() default "127.0.0.1";
 
     /**
      * 目标端口
+     *
      * @return
      */
     int port() default 8080;

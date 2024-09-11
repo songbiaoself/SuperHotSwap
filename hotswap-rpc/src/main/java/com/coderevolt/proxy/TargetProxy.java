@@ -28,10 +28,10 @@ public class TargetProxy implements InvocationHandler {
             //注入private
             field.setAccessible(true);
             RPC rpc = field.getAnnotation(RPC.class);
-            if (rpc!=null) {
+            if (rpc != null) {
                 //注入带有rpc注解的成员变量中
                 Object rpcProxy = GeneratorProxy.getRPCProxy(field.getType(), new RpcInfo(rpc.ip(), rpc.port(), rpc.value()));
-                field.set(target,rpcProxy);
+                field.set(target, rpcProxy);
             }
         }
         return method.invoke(target, args);
