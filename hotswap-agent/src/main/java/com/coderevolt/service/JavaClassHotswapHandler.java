@@ -4,16 +4,13 @@ import com.coderevolt.AgentCommand;
 import com.coderevolt.HotswapException;
 import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.dto.JavaClassHotswapDto;
-import com.coderevolt.javac.SystemClassLoader;
+import com.coderevolt.javac.SystemClassHandler;
 import com.coderevolt.util.AgentUtil;
 import com.coderevolt.util.SpringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
-import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
 import org.springframework.util.ReflectionUtils;
 
 import java.io.IOException;
@@ -22,6 +19,7 @@ import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,19 +54,20 @@ public class JavaClassHotswapHandler implements HotswapHandler {
         JavaClassHotswapDto javaClassHotswapDto = (JavaClassHotswapDto) command.getData();
         Instrumentation inst = agentContext.getInst();
         List<ClassDefinition> definitions = new ArrayList<>();
-        Map<Class<?>, AnnotatedElement> beanTypeMap = new HashMap<>();
+        Map<Class<?>, AnnotatedElement> oldBeanTypeMap = new HashMap<>();
         try {
-            Map<String, byte[]> classMap = AgentUtil.compileJava(javaClassHotswapDto);
+            Map<String, byte[]> classMap = SystemClassHandler.compileJava(Paths.get(javaClassHotswapDto.getJavaFilePath()));
             if (classMap != null && !classMap.isEmpty()) {
+                boolean springProfile = AgentUtil.isSpringProfile();
                 classMap.forEach((k, v) -> {
                     Class<?> clz = null;
                     try {
                         clz = Class.forName(k);
                     } catch (ClassNotFoundException e) {
                         try {
-                            clz = SystemClassLoader.defineClass(k, v, 0, v.length);
-                            if (AgentUtil.isSpringProfile()) {
-                                beanTypeMap.put(clz, null);
+                            clz = SystemClassHandler.defineClass(k, v, 0, v.length);
+                            if (springProfile) {
+                                oldBeanTypeMap.put(clz, null);
                             }
                         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ex) {
                             throw new RuntimeException(ex);
@@ -77,19 +76,19 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                     definitions.add(new ClassDefinition(clz, v));
 
                 });
-                if (AgentUtil.isSpringProfile()) {
+                if (springProfile) {
                     // 在类重定义之前获取bean的类型
                     for (ClassDefinition classDefinition : definitions) {
                         Class<?> clz = classDefinition.getDefinitionClass();
-                        if (!beanTypeMap.containsKey(clz)) {
-                            beanTypeMap.put(clz, getBeanType(clz));
+                        if (!oldBeanTypeMap.containsKey(clz)) {
+                            oldBeanTypeMap.put(clz, SpringUtil.getBeanType(clz));
                         }
                     }
                 }
                 for (ClassDefinition classDefinition : definitions) {
                     // 更新本地class文件，动态编译需要动态链接class文件（-classpath）
                     try {
-                        AgentUtil.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
+                        SystemClassHandler.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
                     } catch (HotswapException e) {
                         throw new RuntimeException(e);
                     }
@@ -98,8 +97,8 @@ public class JavaClassHotswapHandler implements HotswapHandler {
             } else {
                 throw new HotswapException("编译失败: " + javaClassHotswapDto.getJavaFilePath());
             }
-            if (!beanTypeMap.isEmpty()) {
-                springHotSwap(definitions, beanTypeMap);
+            if (!oldBeanTypeMap.isEmpty()) {
+                springHotSwap(definitions, oldBeanTypeMap);
             }
         } catch (IOException | UnmodifiableClassException | ClassNotFoundException e) {
             throw new HotswapException("class热更新失败: " + javaClassHotswapDto.getJavaFilePath(), e);
@@ -111,74 +110,52 @@ public class JavaClassHotswapHandler implements HotswapHandler {
      * 更新requestmapping
      * @param definitions
      */
-    private void springHotSwap(List<ClassDefinition> definitions, Map<Class<?>, AnnotatedElement> beanTypeMap) {
+    private void springHotSwap(List<ClassDefinition> definitions, Map<Class<?>, AnnotatedElement> oldBbeanTypeMap) {
         final Logger logger = LoggerFactory.getLogger(JavaClassHotswapHandler.class);
         for (ClassDefinition definition : definitions) {
             Class<?> beanClass = definition.getDefinitionClass();
-            AnnotatedElement oldAnnotation = beanTypeMap.get(beanClass);
-            if (oldAnnotation == null && isSpringBean(beanClass)) {
+            AnnotatedElement oldAnnotation = oldBbeanTypeMap.get(beanClass);
+            if (oldAnnotation == null && SpringUtil.isSpringBean(beanClass)) {
                 String beanName = beanClass.getSimpleName().substring(0, 1).toLowerCase() +
                         (beanClass.getSimpleName().length() > 1 ? beanClass.getSimpleName().substring(1) : "");
                 logger.info("[SuperHotSwap]注册bean:{}", beanName);
                 SpringUtil.registerBean(beanName, beanClass);
-                if (isControllerBean(beanClass)) {
-                    SpringUtil.removeMapping(beanClass);
-                    // 清除方法、字段缓存
-                    ReflectionUtils.clearCache();
-                    // 清除注解缓存
-                    AnnotationUtils.clearCache();
-                    logger.debug("[SuperHotSwap]添加requestMapping");
-                    SpringUtil.addMapping(beanClass);
+                if (SpringUtil.isControllerBean(beanClass)) {
+                    refreshMapping(beanClass);
                     logger.info("[SuperHotSwap]更新requestMapping完成");
                 }
             }
-            if (oldAnnotation != null && !isSpringBean(beanClass)){
+            if (oldAnnotation != null && !SpringUtil.isSpringBean(beanClass)){
                 String beanName = beanClass.getSimpleName().substring(0, 1).toLowerCase() +
                         (beanClass.getSimpleName().length() > 1 ? beanClass.getSimpleName().substring(1) : "");
                 logger.info("[SuperHotSwap]销毁bean:{}", beanName);
                 if (Controller.class.isAssignableFrom((Class<?>) oldAnnotation)) {
                     SpringUtil.removeMapping(beanClass);
-                    // 清除方法、字段缓存
                     ReflectionUtils.clearCache();
-                    // 清除注解缓存
                     AnnotationUtils.clearCache();
                 }
-                SpringUtil.destroyBean(beanName);
+                try {
+                    SpringUtil.destroyBean(beanName);
+                } catch (Exception e) {
+                    logger.error("[SuperHotSwap]销毁bean失败", e);
+                }
             }
 
-            if (oldAnnotation != null && isControllerBean(beanClass)) {
-                SpringUtil.removeMapping(beanClass);
-                // 清除方法、字段缓存
-                ReflectionUtils.clearCache();
-                // 清除注解缓存
-                AnnotationUtils.clearCache();
-                SpringUtil.addMapping(beanClass);
+            if (oldAnnotation != null && SpringUtil.isControllerBean(beanClass)) {
+                refreshMapping(beanClass);
                 logger.info("[SuperHotSwap]更新requestMapping完成");
             }
         }
     }
 
-    private boolean isControllerBean(Class<?> clz) {
-        return AgentUtil.existAnnotation(clz, Controller.class);
+    private void refreshMapping(Class<?> beanClass) {
+        SpringUtil.removeMapping(beanClass);
+        // 清除方法、字段缓存
+        ReflectionUtils.clearCache();
+        // 清除注解缓存
+        AnnotationUtils.clearCache();
+        SpringUtil.addMapping(beanClass);
     }
 
-    private boolean isServiceBean(Class<?> clz) {
-        return AgentUtil.existAnnotation(clz, Service.class);
-    }
 
-    private boolean isRepositoryBean(Class<?> clz) {
-        return AgentUtil.existAnnotation(clz, Repository.class);
-    }
-
-    private AnnotatedElement getBeanType(Class<?> clz) {
-        if (isControllerBean(clz)) return Controller.class;
-        else if (isServiceBean(clz)) return Service.class;
-        else if (isRepositoryBean(clz)) return Repository.class;
-        else if (isSpringBean(clz)) return Component.class;
-        else return null;
-    }
-
-    private boolean isSpringBean(Class<?> clz) {
-        return AgentUtil.existAnnotation(clz, Component.class);
-    }
 }

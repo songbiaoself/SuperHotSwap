@@ -19,11 +19,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -246,6 +250,30 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
         }, ReflectionUtils.USER_DECLARED_METHODS);
     }
 
+
+    public static boolean isControllerBean(Class<?> clz) {
+        return AgentUtil.existAnnotation(clz, Controller.class);
+    }
+
+    public static boolean isServiceBean(Class<?> clz) {
+        return AgentUtil.existAnnotation(clz, Service.class);
+    }
+
+    public static boolean isRepositoryBean(Class<?> clz) {
+        return AgentUtil.existAnnotation(clz, Repository.class);
+    }
+
+    public static boolean isSpringBean(Class<?> clz) {
+        return AgentUtil.existAnnotation(clz, Component.class);
+    }
+
+    public static AnnotatedElement getBeanType(Class<?> clz) {
+        if (isControllerBean(clz)) return Controller.class;
+        else if (isServiceBean(clz)) return Service.class;
+        else if (isRepositoryBean(clz)) return Repository.class;
+        else if (isSpringBean(clz)) return Component.class;
+        else return null;
+    }
 
 }
 

@@ -21,7 +21,7 @@ import java.nio.file.StandardCopyOption;
  */
 public class MybatisHotswapHandler implements HotswapHandler {
 
-    private boolean isSwapStrictMap = false;
+    private static volatile boolean isSwapStrictMap = false;
 
     @Override
     public boolean validateEnv() throws HotswapException {
@@ -50,16 +50,17 @@ public class MybatisHotswapHandler implements HotswapHandler {
     }
 
     private void mapperHotswap(MapperHotswapDto mapperHotswapDto) throws HotswapException {
-        if (!validateMapperHotSwapEvn()) {
-            throw new HotswapException("mapper环境验证失败");
-        }
         try {
             Class<?> type = Class.forName(mapperHotswapDto.getMapperClass());
             SqlSessionFactory sqlSessionFactory = SpringUtil.getBean(SqlSessionFactory.class);
             Configuration configuration = sqlSessionFactory.getConfiguration();
             if (!isSwapStrictMap) {
-                MapperHotswapPlugin.swapStrictMap(configuration);
-                isSwapStrictMap = true;
+                synchronized (MybatisHotswapHandler.class) {
+                    if (!isSwapStrictMap) {
+                        MapperHotswapPlugin.swapStrictMap(configuration);
+                        isSwapStrictMap = true;
+                    }
+                }
             }
             // 拷贝到编译目录
             File xmlFile = new File(mapperHotswapDto.getMapperXmlPath());

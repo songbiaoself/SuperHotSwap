@@ -1,6 +1,6 @@
 package com.coderevolt.log;
 
-import com.coderevolt.util.ProjectUtil;
+import com.coderevolt.Constant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +30,7 @@ public class SystemLogCollect {
                 if (!isInject) {
                     try {
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyMMdd");
-                        File logDir = new File(ProjectUtil.homePath, "log/" + dateFormat.format(new Date()));
+                        File logDir = new File(Constant.homePath, "log/" + dateFormat.format(new Date()));
                         if (!logDir.exists()) logDir.mkdirs();
 
                         errStreamWrapper = new PrintStreamWrapper(System.err, new File(logDir, "err.log"));

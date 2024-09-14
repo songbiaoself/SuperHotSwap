@@ -1,6 +1,8 @@
 package com.coderevolt.util;
 
 
+import com.coderevolt.Constant;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -11,10 +13,8 @@ import java.util.Random;
  */
 public class ProjectUtil {
 
-    public static final String homePath = System.getProperty("user.home") + File.separator + "SuperHotSwap";
-
     public static String copyToLocal(InputStream inputStream, String fileName) throws IOException {
-        File file = new File(homePath, "libs");
+        File file = new File(Constant.homePath, "libs");
         if (!file.exists()) {
             file.mkdirs();
         }

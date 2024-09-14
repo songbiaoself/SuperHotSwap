@@ -1,8 +1,8 @@
 package com.coderevolt.agent;
 
+import com.coderevolt.Constant;
 import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.server.RPCServer;
-import com.coderevolt.util.AgentUtil;
 
 import java.io.*;
 import java.lang.instrument.Instrumentation;
@@ -21,8 +21,6 @@ public class MainAgentHook {
      * @param inst
      */
     public static void premain(String agentArgs, Instrumentation inst) {
-        System.out.println("agent回调测试:" + agentArgs);
-        System.out.println(inst);
         agentmain(agentArgs, inst);
     }
 
@@ -54,7 +52,7 @@ public class MainAgentHook {
                     "                | |                                                           | |    \n" +
                     "                |_|                                                           |_|    ");
             System.out.println("SuperHotSwap启动成功，监听端口: " + agentArgs + "，版本: " + version + "，link: https://mp.weixin.qq.com/s/QPviEak1uvmJlDcB4I-3ZQ");
-            String logPath = AgentUtil.homePath + File.separator + "log";;
+            String logPath = Constant.homePath + File.separator + "log";;
             System.out.println("SuperHotSwap日志路径：file:///" + logPath.replace("\\", "/"));
         } catch (IOException e) {
             System.err.println("rpc服务端启动失败");

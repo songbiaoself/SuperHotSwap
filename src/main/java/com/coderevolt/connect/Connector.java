@@ -51,16 +51,16 @@ public class Connector {
                     try {
                         // 获取rpc连接
                         Class<AgentApi> agentApiClass = AgentApi.class;
-                        AgentApi rpcProxy = cache.get(vm.getPid());
+                        AgentApi rpcProxy = cache.get(vm.getUniqueId());
                         if (rpcProxy == null) {
                             rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
-                            cache.put(vm.getPid(), rpcProxy, 1, TimeUnit.HOURS);
+                            cache.put(vm.getUniqueId(), rpcProxy, 1, TimeUnit.HOURS);
                         }
                         System.out.println("发送指令: " + command);
                         consumer.accept(rpcProxy.execute(command));
                     } catch (Exception e) {
                         e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
-                        System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，pid: " + vm.getPid() + "，异常: " + e.getMessage());
+                        System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，uid: " + vm.getUniqueId() + "，异常: " + e.getMessage());
                     }
                 });
             }

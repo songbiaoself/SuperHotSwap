@@ -1,7 +1,5 @@
 package com.coderevolt.context;
 
-import com.sun.tools.attach.VirtualMachine;
-
 /**
  * @author 公众号: CodeRevolt
  * @date 2024/4/21 8:28
@@ -9,23 +7,11 @@ import com.sun.tools.attach.VirtualMachine;
  */
 public class MachineBeanInfo {
 
-    private VirtualMachine virtualMachine;
-
     private String ip;
 
     private int port;
 
-    private String pid;
-
     private String processName;
-
-    public VirtualMachine getVirtualMachine() {
-        return virtualMachine;
-    }
-
-    public void setVirtualMachine(VirtualMachine virtualMachine) {
-        this.virtualMachine = virtualMachine;
-    }
 
     public String getIp() {
         return ip;
@@ -43,12 +29,8 @@ public class MachineBeanInfo {
         this.port = port;
     }
 
-    public String getPid() {
-        return pid;
-    }
-
-    public void setPid(String pid) {
-        this.pid = pid;
+    public String getUniqueId() {
+        return ip + ":" + port;
     }
 
     public String getProcessName() {
@@ -59,4 +41,12 @@ public class MachineBeanInfo {
         this.processName = processName;
     }
 
+    @Override
+    public String toString() {
+        return "MachineBeanInfo{" +
+                "ip='" + ip + '\'' +
+                ", port=" + port +
+                ", processName='" + processName + '\'' +
+                '}';
+    }
 }

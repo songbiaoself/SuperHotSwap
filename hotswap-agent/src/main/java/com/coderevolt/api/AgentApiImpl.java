@@ -38,7 +38,7 @@ public class AgentApiImpl implements AgentApi {
             handler.dispatch(agentCommand);
             System.out.println("[SuperHotSwap]热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
             return AgentResponse.success("执行命令成功", null);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             return AgentResponse.failed("执行命令失败: " + e.getMessage(), null);
         }
