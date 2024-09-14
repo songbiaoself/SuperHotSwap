@@ -20,7 +20,7 @@ public class RPCServer {
 
     public static void start(int port) throws IOException {
         ServerSocket serverSocket = new ServerSocket(port);
-        new Thread(() -> {
+        Thread serverThread = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     Socket socket = serverSocket.accept();
@@ -43,7 +43,10 @@ public class RPCServer {
                     e.printStackTrace();
                 }
             }
-        }, "RPC服务端线程[" + port + "]").start();
+        }, "RPC服务端线程[" + port + "]");
+        // 守护线程不影响进程结束
+        serverThread.setDaemon(true);
+        serverThread.start();
     }
 
     /**
