@@ -63,6 +63,7 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                     Class<?> clz = null;
                     try {
                         clz = Class.forName(k);
+                        definitions.add(new ClassDefinition(clz, v));
                     } catch (ClassNotFoundException e) {
                         try {
                             clz = SystemClassHandler.defineClass(k, v, 0, v.length);
@@ -73,32 +74,24 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                             throw new RuntimeException(ex);
                         }
                     }
-                    definitions.add(new ClassDefinition(clz, v));
-
                 });
                 if (springProfile) {
                     // 在类重定义之前获取bean的类型
                     for (ClassDefinition classDefinition : definitions) {
                         Class<?> clz = classDefinition.getDefinitionClass();
-                        if (!oldBeanTypeMap.containsKey(clz)) {
-                            oldBeanTypeMap.put(clz, SpringUtil.getBeanType(clz));
-                        }
+                        oldBeanTypeMap.put(clz, SpringUtil.getBeanType(clz));
                     }
                 }
                 for (ClassDefinition classDefinition : definitions) {
                     // 更新本地class文件，动态编译需要动态链接class文件（-classpath）
-                    try {
-                        SystemClassHandler.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
-                    } catch (HotswapException e) {
-                        throw new RuntimeException(e);
-                    }
+                    SystemClassHandler.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
                 }
                 inst.redefineClasses(definitions.toArray(new ClassDefinition[0]));
+                if (!oldBeanTypeMap.isEmpty()) {
+                    springHotSwap(definitions, oldBeanTypeMap);
+                }
             } else {
                 throw new HotswapException("编译失败: " + javaClassHotswapDto.getJavaFilePath());
-            }
-            if (!oldBeanTypeMap.isEmpty()) {
-                springHotSwap(definitions, oldBeanTypeMap);
             }
         } catch (IOException | UnmodifiableClassException | ClassNotFoundException e) {
             throw new HotswapException("class热更新失败: " + javaClassHotswapDto.getJavaFilePath(), e);
@@ -115,6 +108,7 @@ public class JavaClassHotswapHandler implements HotswapHandler {
         for (ClassDefinition definition : definitions) {
             Class<?> beanClass = definition.getDefinitionClass();
             AnnotatedElement oldAnnotation = oldBbeanTypeMap.get(beanClass);
+            // 新建class，并且是spring bean
             if (oldAnnotation == null && SpringUtil.isSpringBean(beanClass)) {
                 String beanName = beanClass.getSimpleName().substring(0, 1).toLowerCase() +
                         (beanClass.getSimpleName().length() > 1 ? beanClass.getSimpleName().substring(1) : "");
@@ -125,6 +119,8 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                     logger.info("[SuperHotSwap]更新requestMapping完成");
                 }
             }
+
+            // 去除bean注解，销毁bean对象
             if (oldAnnotation != null && !SpringUtil.isSpringBean(beanClass)){
                 String beanName = beanClass.getSimpleName().substring(0, 1).toLowerCase() +
                         (beanClass.getSimpleName().length() > 1 ? beanClass.getSimpleName().substring(1) : "");
@@ -141,6 +137,7 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                 }
             }
 
+            // controller bean对象，更新mapping
             if (oldAnnotation != null && SpringUtil.isControllerBean(beanClass)) {
                 refreshMapping(beanClass);
                 logger.info("[SuperHotSwap]更新requestMapping完成");
