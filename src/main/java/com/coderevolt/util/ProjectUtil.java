@@ -25,7 +25,8 @@ public class ProjectUtil {
 
     public static int findAvailablePort() throws IOException {
         Random random = new Random();
-        while (true) {
+        long startMillis = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startMillis < 10 * 1000) {
             int p = 20000 + random.nextInt(45535);
             Process process;
             if (OsUtil.isWindows()) {
@@ -48,6 +49,7 @@ public class ProjectUtil {
                 }
             }
         }
+        throw new IllegalStateException("查找可用端口超时");
     }
 
     //    private static final int retry = 5;

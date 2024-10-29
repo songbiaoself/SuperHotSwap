@@ -1,7 +1,6 @@
 package com.coderevolt.agent;
 
 import com.coderevolt.Constant;
-import com.coderevolt.context.AgentContextHolder;
 import com.coderevolt.server.RPCServer;
 
 import java.io.*;

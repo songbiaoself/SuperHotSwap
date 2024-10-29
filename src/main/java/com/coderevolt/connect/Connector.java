@@ -8,7 +8,9 @@ import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.proxy.GeneratorProxy;
 import com.coderevolt.util.CacheMap;
+import com.coderevolt.util.IdeaNotifyUtil;
 import com.coderevolt.utils.RpcInfo;
+import com.intellij.notification.NotificationType;
 
 import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -57,6 +59,7 @@ public class Connector {
                             cache.put(vm.getUniqueId(), rpcProxy, 1, TimeUnit.HOURS);
                         }
                         System.out.println("发送指令: " + command);
+                        IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]：发送命令", NotificationType.INFORMATION);
                         consumer.accept(rpcProxy.execute(command));
                     } catch (Exception e) {
                         e.printStackTrace(SystemLogCollect.getErrStreamWrapper());

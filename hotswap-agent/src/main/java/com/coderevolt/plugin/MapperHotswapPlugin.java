@@ -11,6 +11,7 @@ import org.apache.ibatis.session.Configuration;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +34,14 @@ public class MapperHotswapPlugin {
      * @throws IllegalStateException 替换strictMap失败
      * @see Configuration.StrictMap
      */
-    public static void swapStrictMap(Configuration configuration) {
+    public static void swapStrictMap(Configuration configuration) throws NoSuchFieldException {
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+
         Class<? extends Configuration> configurationClass = configuration.getClass();
+        while (configurationClass != Configuration.class) {
+            configurationClass = (Class<? extends Configuration>) configurationClass.getSuperclass();
+        }
         List<String> targetFields = Arrays.asList("mappedStatements", "caches", "resultMaps", "parameterMaps", "keyGenerators", "sqlFragments");
         Field[] declaredFields = configurationClass.getDeclaredFields();
         Map<String, Field> fieldMap = Arrays.stream(declaredFields).collect(Collectors.toMap(Field::getName, obj -> obj));
@@ -43,10 +50,12 @@ public class MapperHotswapPlugin {
             try {
                 field.setAccessible(true);
                 // map集合对象复制
-                Class<?> originStrictMapClass = field.get(configuration).getClass();
-                Set<Map.Entry> entrySet = (Set<Map.Entry>) originStrictMapClass.getMethod("entrySet").invoke(field.get(configuration));
+                Object obj = field.get(configuration);
+                Class<?> originStrictMapClass = obj.getClass();
+                Set<Map.Entry> entrySet = (Set<Map.Entry>) originStrictMapClass.getMethod("entrySet").invoke(obj);
                 StrictMap<Object> strictMap = new StrictMap<>(f + " collection");
                 entrySet.forEach(s -> strictMap.put(String.valueOf(s.getKey()), s.getValue()));
+                modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
                 field.set(configuration, strictMap);
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 throw new IllegalStateException("替换strictMap失败:" + e.getMessage(), e);

@@ -1,9 +1,14 @@
 package com.coderevolt.util;
 
+import com.coderevolt.HotswapException;
+import org.springframework.core.io.UrlResource;
+
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.net.URL;
 import java.util.*;
 
 /**
@@ -100,5 +105,26 @@ public class AgentUtil {
         } catch (Throwable e) {
             return false;
         }
+    }
+
+    /**
+     * 获取项目中所有模块的类路径
+     * @return
+     * @throws HotswapException
+     */
+    public static Set<UrlResource> getAllModuleClassPath() throws HotswapException {
+        Set<UrlResource> result = new LinkedHashSet<>(16);
+        ClassLoader cl = SpringUtil.getApplicationContext().getClassLoader();
+        Enumeration<URL> resourceUrls = null;
+        try {
+            resourceUrls = (cl != null ? cl.getResources("") : ClassLoader.getSystemResources(""));
+            while (resourceUrls.hasMoreElements()) {
+                URL url = resourceUrls.nextElement();
+                result.add(new UrlResource(url));
+            }
+        } catch (IOException e) {
+            throw new HotswapException("获取类路径失败", e);
+        }
+        return result;
     }
 }

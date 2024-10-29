@@ -2,7 +2,7 @@ package com.coderevolt.service;
 
 import com.coderevolt.AgentCommand;
 import com.coderevolt.HotswapException;
-import com.coderevolt.context.AgentContextHolder;
+import com.coderevolt.agent.AgentContextHolder;
 import com.coderevolt.dto.JavaClassHotswapDto;
 import com.coderevolt.javac.SystemClassHandler;
 import com.coderevolt.util.AgentUtil;

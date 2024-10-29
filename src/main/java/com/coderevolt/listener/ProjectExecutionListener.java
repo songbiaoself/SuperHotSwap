@@ -10,11 +10,9 @@ import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.configurations.RunProfile;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,8 +40,6 @@ public class ProjectExecutionListener implements ExecutionListener {
     static {
         SystemLogCollect.injectStandardStream();
     }
-
-    private Key<Object> portKey = new Key<>("port");;
 
     public static String getAgentJarPath() throws IOException {
         if (agentJarPath == null) {
@@ -103,7 +99,7 @@ public class ProjectExecutionListener implements ExecutionListener {
                 stringObjectMap.put("port", port);
                 return stringObjectMap;
             });
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
         }
     }

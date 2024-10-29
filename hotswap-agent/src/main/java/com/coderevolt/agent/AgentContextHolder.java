@@ -1,4 +1,4 @@
-package com.coderevolt.context;
+package com.coderevolt.agent;
 
 import java.lang.instrument.Instrumentation;
 
@@ -19,7 +19,7 @@ public class AgentContextHolder {
 
     }
 
-    public static void init(int port, Instrumentation inst) {
+    static void init(int port, Instrumentation inst) {
         agentContext.port = port;
         agentContext.inst = inst;
     }
