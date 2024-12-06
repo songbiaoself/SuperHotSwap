@@ -82,7 +82,7 @@ public class MainAgentHook {
                     String attributes = manifest.getMainAttributes().getValue("Class-Path");
                     if (attributes != null) {
                         attributes = attributes
-                                .replace("file:\\", "")
+                                .replace("file:/", "")
                                 .replace(" ", File.pathSeparator);
                         if (OsUtil.isWindows()) {
                             attributes = attributes.replace("/", "\\");
