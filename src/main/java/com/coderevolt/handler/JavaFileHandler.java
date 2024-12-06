@@ -55,7 +55,7 @@ public class JavaFileHandler implements Handler {
 
             String processName = e.getPresentation().getText();
             Connector.sendToProcess(command, Collections.singletonList(VirtualMachineContext.get(processName)), agentResponse -> {
-                IdeaNotifyUtil.notify("[" + processName + "]：" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
+                IdeaNotifyUtil.notify("[" + processName + "]" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
             });
         } catch (Exception exception) {
             exception.printStackTrace(SystemLogCollect.getErrStreamWrapper());

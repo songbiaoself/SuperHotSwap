@@ -54,7 +54,7 @@ public class XmlFileHandler implements Handler {
             command.setData(mapperHtosDto);
 
             String processName = e.getPresentation().getText();
-            Connector.sendToProcess(command, Collections.singletonList(VirtualMachineContext.get(processName)), agentResponse -> IdeaNotifyUtil.notify("[" + processName + "]:" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR));
+            Connector.sendToProcess(command, Collections.singletonList(VirtualMachineContext.get(processName)), agentResponse -> IdeaNotifyUtil.notify("[" + processName + "]" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR));
         } else {
             IdeaNotifyUtil.notify("namespace解析失败", NotificationType.WARNING);
         }

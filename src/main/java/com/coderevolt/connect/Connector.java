@@ -59,7 +59,7 @@ public class Connector {
                             cache.put(vm.getUniqueId(), rpcProxy, 1, TimeUnit.HOURS);
                         }
                         System.out.println("发送指令: " + command);
-                        IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]：发送命令", NotificationType.INFORMATION);
+                        IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]发送命令", NotificationType.INFORMATION);
                         consumer.accept(rpcProxy.execute(command));
                     } catch (Exception e) {
                         e.printStackTrace(SystemLogCollect.getErrStreamWrapper());

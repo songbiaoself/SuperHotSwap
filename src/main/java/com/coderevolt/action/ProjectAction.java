@@ -51,9 +51,10 @@ public class ProjectAction extends AnAction {
                         IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
                     }
                 });
-                break;
+                return;
             }
         }
+        IdeaNotifyUtil.notify("暂不支持热更新", NotificationType.INFORMATION);
     }
 
 }
