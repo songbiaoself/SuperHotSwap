@@ -1,6 +1,7 @@
 package com.coderevolt.listener;
 
 import com.coderevolt.context.MachineBeanInfo;
+import com.coderevolt.context.ProjectContext;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.util.ProjectUtil;
@@ -13,6 +14,7 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +47,11 @@ public class ProjectExecutionListener implements ExecutionListener {
         if (agentJarPath == null) {
             synchronized (ProjectExecutionListener.class) {
                 if (agentJarPath == null) {
-                    agentJarPath = ProjectUtil.copyToLocal(ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar"), "hotswap-agent.jar");
+                    try (
+                        InputStream resourceAsStream = ProjectExecutionListener.class.getResourceAsStream("/hotswap-agent.jar");
+                    ) {
+                        agentJarPath = ProjectUtil.copyToLocal(resourceAsStream, "libs/hotswap-agent.jar");
+                    }
                 }
             }
         }
@@ -81,17 +87,6 @@ public class ProjectExecutionListener implements ExecutionListener {
             }
             setVMParametersMethod.invoke(runProfile, agentVMParam);
 
-            String runProfileName = runProfile.getName() + "(" + port + ")";
-
-            MachineBeanInfo machineBeanInfo = new MachineBeanInfo();
-            machineBeanInfo.setProcessName(runProfileName);
-            machineBeanInfo.setIp("127.0.0.1");
-            machineBeanInfo.setPort(port);
-
-            System.out.println("添加上下文数据: " + machineBeanInfo);
-
-            VirtualMachineContext.put(runProfileName, machineBeanInfo);
-
             processContextMap.compute(env, (executionEnvironment, stringObjectMap) -> {
                 if (stringObjectMap == null) {
                     stringObjectMap = new HashMap<>();
@@ -100,11 +95,32 @@ public class ProjectExecutionListener implements ExecutionListener {
                 return stringObjectMap;
             });
         } catch (Throwable e) {
+            System.err.println("agent注入失败");
             e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
         }
     }
 
-//    @Override
+    @Override
+    public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler) {
+        RunConfigurationBase runProfile = (RunConfigurationBase) env.getRunProfile();
+        if (!StrUtil.equalsAny(runProfile.getType().getDisplayName(), true, runTypeList)) {
+            return;
+        }
+        Map<String, Object> envMap = processContextMap.get(env);
+        int port = (int) envMap.get("port");
+        String runProfileName = runProfile.getName() + "(" + port + ")";
+
+        MachineBeanInfo machineBeanInfo = new MachineBeanInfo();
+        machineBeanInfo.setProcessName(runProfileName);
+        machineBeanInfo.setIp("127.0.0.1");
+        machineBeanInfo.setPort(port);
+
+        System.out.println("添加上下文数据: " + machineBeanInfo);
+        VirtualMachineContext.put(runProfileName, machineBeanInfo);
+    }
+
+
+    //    @Override
 //    public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env, @NotNull ProcessHandler handler) {
 //        EXECUTOR_THREAD_POOL.execute(() -> {
 //            String error = null;
@@ -207,9 +223,27 @@ public class ProjectExecutionListener implements ExecutionListener {
                 return;
             }
             Map<String, Object> context = processContextMap.get(env);
-            String name = runProfile.getName() + "(" + context.get("port") + ")";
+            int port = (int) context.get("port");
+            String name = runProfile.getName() + "(" + port + ")";
             System.out.println("进程销毁，回收上下文信息：" + name);
             VirtualMachineContext.remove(name);
+            ProjectContext.clear(env.getProject());
+
+            try {
+                Class<? extends @NotNull RunProfile> runProfileClz = runProfile.getClass();
+                Method setVMParametersMethod = runProfileClz.getMethod("setVMParameters", String.class);
+                Method getVMParametersMethod = runProfileClz.getMethod("getVMParameters");
+                getVMParametersMethod.setAccessible(true);
+
+                final String agentRegex = "-javaagent:"  + getAgentJarPath().replace("\\", "\\\\") + "=[0-9]{5}";
+                String userDefinedVM = (String) getVMParametersMethod.invoke(runProfile);
+                if (userDefinedVM != null && !userDefinedVM.trim().isEmpty()) {
+                    setVMParametersMethod.invoke(runProfile, userDefinedVM.replaceAll(agentRegex, "").trim());
+                }
+            } catch (Exception e) {
+                System.err.println("撤销agent注入失败");
+                e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
+            }
         }, "进程销毁处理线程").start();
     }
 

@@ -1,30 +1,69 @@
 package com.coderevolt.util;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * 缓存map
- *
+ * ThreadUnSafe 不是线程安全
  * @param <K>
  * @param <V>
  */
 public class CacheMap<K, V> {
 
-    private final Map<Thread, Map<Object, Node<Object>>> map = new ConcurrentHashMap<>();
+    private final LinkedHashMap<K, Node<V>> map;
+    private final int capacity;
 
+    private static final float loadFactor = 0.75f;
+
+    public CacheMap() {
+        this(128);
+    }
+
+    public CacheMap(int capacity) {
+        this.capacity = capacity;
+        this.map = new LinkedHashMap<>(capacity, loadFactor, true);
+    }
+
+    public void put(K key, V value) {
+        this.put(key, value, Integer.MAX_VALUE, TimeUnit.DAYS);
+    }
+
+    /**
+     * 大于容量移除队首元素
+     * @param key
+     * @param val
+     * @param expireTime
+     * @param unit
+     */
     public void put(K key, V val, long expireTime, TimeUnit unit) {
-        Map<Object, Node<Object>> nodeMap = map.computeIfAbsent(Thread.currentThread(), k -> new ConcurrentHashMap<>());
-        nodeMap.put(key, new Node<>(val, unit.toNanos(expireTime)));
+        Node<V> value = new Node<>(val, unit.toNanos(expireTime));
+        map.put(key, value);
+        if (map.size() > capacity) {
+            synchronized (map) {
+                Iterator<K> iterator = map.keySet().iterator();
+                int c = (int) (capacity * loadFactor);
+                while (map.size() > c && iterator.hasNext()) {
+                    map.remove(iterator.next());
+                }
+            }
+        }
+    }
+
+    public V load(K key, Supplier<V> supplier) {
+        V r = get(key);
+        if (r == null) {
+            r = supplier.get();
+        }
+        return r;
     }
 
     public V get(K key) {
-        Map<Object, Node<Object>> nodeMap = map.get(Thread.currentThread());
-        if (nodeMap == null) return null;
-        Node<V> node = (Node<V>) nodeMap.get(key);
+        Node<V> node = map.get(key);
         if (node == null || node.isExpired()) {
-            nodeMap.remove(key);
+            map.remove(key);
             return null;
         }
         return node.value;

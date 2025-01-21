@@ -17,21 +17,22 @@ public class JavaClassHotswapDto implements Serializable {
     private String javaFilePath;
 
     /**
-     * 全类名，例如: com.coderevolt.dto.JavaClassHotswapDto
+     * 是否更新本地class文件，不存在则创建
+     * 项目每次启动会加载类路径下的class文件
      */
-    private String fullClassName;
+    private boolean freshClassFile;
 
-    public JavaClassHotswapDto(String javaFilePath, String fullClassName) {
+    public boolean isFreshClassFile() {
+        return freshClassFile;
+    }
+
+    public void setFreshClassFile(boolean freshClassFile) {
+        this.freshClassFile = freshClassFile;
+    }
+
+    public JavaClassHotswapDto(String javaFilePath, boolean freshClassFile) {
         this.javaFilePath = javaFilePath;
-        this.fullClassName = fullClassName;
-    }
-
-    public String getFullClassName() {
-        return fullClassName;
-    }
-
-    public void setFullClassName(String fullClassName) {
-        this.fullClassName = fullClassName;
+        this.freshClassFile = freshClassFile;
     }
 
     public String getJavaFilePath() {
@@ -46,7 +47,6 @@ public class JavaClassHotswapDto implements Serializable {
     public String toString() {
         return "JavaClassHotswapDto{" +
                 "javaFilePath='" + javaFilePath + '\'' +
-                ", fullClassName='" + fullClassName + '\'' +
                 '}';
     }
 }

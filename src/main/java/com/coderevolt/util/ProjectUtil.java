@@ -14,11 +14,10 @@ import java.util.Random;
 public class ProjectUtil {
 
     public static String copyToLocal(InputStream inputStream, String fileName) throws IOException {
-        File file = new File(Constant.homePath, "libs");
-        if (!file.exists()) {
-            file.mkdirs();
+        File targetFile = new File(Constant.homePath, fileName);
+        if (!targetFile.getParentFile().exists()) {
+            targetFile.getParentFile().mkdirs();
         }
-        File targetFile = new File(file, fileName);
         Files.copy(inputStream, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         return targetFile.getAbsolutePath();
     }
