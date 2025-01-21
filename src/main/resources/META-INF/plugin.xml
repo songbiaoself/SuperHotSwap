@@ -5,8 +5,7 @@
 
     <description>It aims to realize the most convenient IDEA hot update plug-in, reduce user operation steps, and
         provide zero-configuration visual operation updates. Currently, hot updates of MapperXML and Java files are
-        supported. The details are similar to update records. Public account: CodeRevolt, which updates high-quality CS
-        articles from time to time.
+        supported. The details are similar to update records. email: 646997146@qq.com
     </description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
@@ -17,6 +16,7 @@
         <!-- Add your extensions here -->
         <!--notify 2020.3版本后需在plugin中注册-->
         <notificationGroup displayType="BALLOON" id="notifyAction"/>
+        <fileEditorProvider implementation="com.coderevolt.ui.ClassFileEditorProvider"/>
     </extensions>
 
     <projectListeners>

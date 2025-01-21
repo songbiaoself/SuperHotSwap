@@ -82,9 +82,11 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                         oldBeanTypeMap.put(clz, SpringUtil.getBeanType(clz));
                     }
                 }
-                for (ClassDefinition classDefinition : definitions) {
-                    // 更新本地class文件，动态编译需要动态链接class文件（-classpath）
-                    SystemClassHandler.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
+                if (javaClassHotswapDto.isFreshClassFile()) {
+                    for (ClassDefinition classDefinition : definitions) {
+                        // 更新本地class文件，动态编译需要动态链接class文件（-classpath）
+                        SystemClassHandler.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
+                    }
                 }
                 inst.redefineClasses(definitions.toArray(new ClassDefinition[0]));
                 if (!oldBeanTypeMap.isEmpty()) {

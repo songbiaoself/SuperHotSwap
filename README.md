@@ -1,68 +1,91 @@
-# SuperHotSwap
+<div align="center">
+  <img align="center" src="./img/logo.png" width="100" height="100" />
+</div>
 
-开发初心：旨在做出一款最便捷的IDEA热更新插件，减少用户操作步骤，提供零配置的可视化操作更新。
+<h2 align="center">SuperHotSwap <sup></sup></h2>
+<h4 align="center"><strong>English</strong> | <a href="./README_CN.md">简体中文</a></h4>
+[![License](https://img.shields.io/github/license/songbiaoself/SuperHotSwap?color=blue)](./LICENSE)
+[![downloads](https://img.shields.io/jetbrains/plugin/d/24290)](https://plugins.jetbrains.com/plugin/24290-jareditor)
+[![release](https://img.shields.io/jetbrains/plugin/v/24290?label=version)](https://plugins.jetbrains.com/plugin/24290-jareditor)
+![sdk](https://img.shields.io/badge/plugin%20sdk-IDEA%202021.3-red.svg)
+<a href="https://hellogithub.com/repository/03b39a2d1a55407797db59737724ce7c" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=03b39a2d1a55407797db59737724ce7c&claim_uid=iEnYZr4sASMjWJb&theme=small" alt="Featured｜HelloGitHub" /></a>
 
-## 开发环境
+The original intention of development: The aim is to make the most convenient IDEA hot update plug-in, reduce user operation steps, and provide visual operation updates with zero configuration.
+
+## Development environment
 
 - JDK1.8
 - IDEA2021.3
 - Gradle8.7
 
-## 支持功能
+## Support features
 
-| 支持功能          | 是否支持 | 说明                                                                  |
+| Support Functions | | Description |
 |---------------|------|---------------------------------------------------------------------|
-| MybatisXML热更新 | √    | 支持select/insert/delete/update/resultMap/parameterMap/sql/cache等内容热更新 |
-| Class热更新      | √    | 原生支持方法内修改热更新。新增修改字段方法类、lombok注解热更新等增强功能需安装dcevm补丁，教程如下。             |
-| Spring热更新     | √    | 支持bean注册，销毁。支持动态更新RequestMapping。                                   |
-| 远程热更新         | 进行中  |                                                                     |
+| MybatisXML Hot Update | √    | Supports hot updates of content such as select/insert/delete/update/resultMap/parameterMap/sql/cache
+| Class Hot Update | √    | Warm updates can be modified within methods natively. Enhancements such as modifying field method classes and hot update of lombok annotations require the installation of the dcevm patch, as shown in the following tutorial
+| Spring Hot Update | √    | Bean registration and destruction are supported. RequestMapping can be dynamically updated
+| Remote Hot Update | Ongoing |                                                                     |
 | ...           | ...  |                                                                     |
 
-## 使用流程
+## Use the process
 
-1. 在插件市场搜索安装
-   ![img.png](img/install.png)
+1. Search for installs in the plugin marketplace
+![img.png](img/install.png)
 
-2. 启动项目
+2. Start the project
 
-安装成功后重启IDEA，启动项目后输出Banner表示安装成功
-![img_1.png](img/banner.png)
+After the installation is successful, restart IDEA, and output a banner after starting the project to indicate that the installation is successful
+![img.png](img/banner.png)
 
-3. Mapper热更新
+3. Mapper hot update
 
-在MapperXML文件下点击`File Hot Swap`按钮执行热更新指令，指令正常输出如下
+Click the 'File Hot Swap' button in the MapperXML file to execute the hot update command, and the normal output of the command is as follows:
 ![img.png](img/xml-hotswap.png)
 
-4. Java热更新
+4. Java hot update
 
-idea文件自动保存是有延迟的，记得先手动<b>ctrl+s</b>保存一下
 ![img.png](img/class-hotswap.gif)
 
-5. Spring热更新
+5. Spring hot update
 
-支持动态创建、编辑、删除接口。演示如下。
+APIs can be created, edited, and deleted dynamically. The demonstration is as follows.
 ![img.png](img/spring-hotswap.gif)
 
+6. jar file hot updates
 
-Instrumentation类重新加载的局限性
+Supports hot update of source code files in .class files and jar packages.
+![img.png](img/jar-hotswap.png)
 
-- 新类和老类的父类必须相同。
-- 新类和老类实现的接口数也要相同，并且是相同的接口。
-- 新类和老类访问符必须一致。
-- 新类和老类字段数和字段名要一致。
-- 新类和老类新增或删除的方法必须是private static/final修饰的。
-- 可以修改方法体。
+## Install hot update patches
+Limitations of hot-like updates
 
-想要去除限制，需要安装jdk补丁，DECVM补丁下载地址：
+- The parent class of the new class and the old class must be the same.
+- The new class and the old class should also implement the same number of interfaces, and they should be the same interfaces.
+- The new class and the old class accessors must be the same.
+- The number of fields and field names of the new and old classes must be the same.
+- Methods added or deleted from new and old classes must be private static/final.
+- You can modify the method body.
+
+If you want to remove the restrictions, you need to install the jdk patch, and the DECVM patch can be downloaded at:
 [https://github.com/dcevm/dcevm](https://github.com/dcevm/dcevm)
 
-下载对应jdk版本补丁，替换即可完成安装。
+Download the patch of the corresponding JDK version and replace it to complete the installation.
+
 ![img.png](img/jvmdll.png)
 
-## 联系方式
+Output version, successful output example
 
-gitee地址: https://gitee.com/song_biao/super-hot-swap
+![img.png](img/dll-example.png)
 
-github地址: https://github.com/songbiaoself/SuperHotSwap
+## Contact
 
-<646997146@qq.com>
+Support is available for a fee, contact details are below.
+
+Gitee Address: https://gitee.com/song_biao/super-hot-swap
+
+github address: https://github.com/songbiaoself/SuperHotSwap
+
+Email 📫: <646997146@qq.com>
+
+Official account: CodeRevolt
