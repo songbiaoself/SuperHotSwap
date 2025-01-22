@@ -4,11 +4,13 @@
 
 <h2 align="center">SuperHotSwap <sup></sup></h2>
 <h4 align="center"><strong>English</strong> | <a href="./README_CN.md">简体中文</a></h4>
+
+![Java](https://img.shields.io/badge/Java-ED8B00.svg?logo=java&logoColor=white)
+![IntelliJ](https://img.shields.io/badge/IntelliJ%20IDEA-black?logo=intellij-idea&logoColor=white)
 [![License](https://img.shields.io/github/license/songbiaoself/SuperHotSwap?color=blue)](./LICENSE)
-[![downloads](https://img.shields.io/jetbrains/plugin/d/24290)](https://plugins.jetbrains.com/plugin/24290-jareditor)
-[![release](https://img.shields.io/jetbrains/plugin/v/24290?label=version)](https://plugins.jetbrains.com/plugin/24290-jareditor)
+[![downloads](https://img.shields.io/jetbrains/plugin/d/24290)](https://plugins.jetbrains.com/plugin/24290-superhotswap)
+[![release](https://img.shields.io/jetbrains/plugin/v/24290?label=version)](https://plugins.jetbrains.com/plugin/24290-superhotswap)
 ![sdk](https://img.shields.io/badge/plugin%20sdk-IDEA%202021.3-red.svg)
-<a href="https://hellogithub.com/repository/03b39a2d1a55407797db59737724ce7c" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=03b39a2d1a55407797db59737724ce7c&claim_uid=iEnYZr4sASMjWJb&theme=small" alt="Featured｜HelloGitHub" /></a>
 
 The original intention of development: The aim is to make the most convenient IDEA hot update plug-in, reduce user operation steps, and provide visual operation updates with zero configuration.
 
