@@ -1,13 +1,17 @@
 package com.coderevolt.javac;
 
+import org.springframework.lang.Nullable;
+
+import javax.annotation.processing.Processor;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * In-memory compile Java source code as String.
@@ -31,14 +35,18 @@ public class JavaStringCompiler {
      *
      * @param fileName Java file name, e.g. "Test.java"
      * @param source   The source code as String.
+     * @param processors java annotation processor
      * @return The compiled results as Map that contains class name as key,
      * class binary as value.
      * @throws IOException If compile error.
      */
-    public Map<String, byte[]> compile(String fileName, String source) throws IOException {
+    public Map<String, byte[]> compile(List<CompileArg> compilerArgs, @Nullable List<Processor> processors) throws IOException {
         try (MemoryJavaFileManager manager = new MemoryJavaFileManager(stdManager)) {
-            JavaFileObject javaFileObject = manager.makeStringSource(fileName, source);
-            CompilationTask task = compiler.getTask(null, manager, null, null, null, Collections.singletonList(javaFileObject));
+            List<JavaFileObject> javaFileObjectList = compilerArgs.stream().map(c -> manager.makeStringSource(c.getFileName(), c.getSource())).collect(Collectors.toList());
+            CompilationTask task = compiler.getTask(null, manager, null, null, null, javaFileObjectList);
+            if (processors != null && !processors.isEmpty()) {
+                task.setProcessors(processors);
+            }
             Boolean result = task.call();
             if (result == null || !result) {
                 throw new RuntimeException("Compilation failed.");
@@ -59,5 +67,42 @@ public class JavaStringCompiler {
     public Class<?> loadClass(String name, byte[] classBytes) throws ClassNotFoundException, IOException {
         classLoader.put(name, classBytes);
         return classLoader.loadClass(name);
+    }
+
+
+    public static class CompileArg {
+
+        private String fileName;
+
+        private String source;
+
+        public CompileArg(String fileName, String source) {
+            this.fileName = fileName;
+            this.source = source;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
+        }
+
+        @Override
+        public String toString() {
+            return "CompileArg{" +
+                    "fileName='" + fileName + '\'' +
+                    ", source='" + source + '\'' +
+                    '}';
+        }
     }
 }

@@ -12,15 +12,20 @@ public class JavaClassHotswapDto implements Serializable {
     private static final long serialVersionUID = 2L;
 
     /**
-     * java文件绝对路径
+     * 源文件绝对路径
      */
-    private String javaFilePath;
+    private String originalFilePath;
 
     /**
      * 是否更新本地class文件，不存在则创建
      * 项目每次启动会加载类路径下的class文件
      */
     private boolean freshClassFile;
+
+    public JavaClassHotswapDto(String originalFilePath, boolean freshClassFile) {
+        this.originalFilePath = originalFilePath;
+        this.freshClassFile = freshClassFile;
+    }
 
     public boolean isFreshClassFile() {
         return freshClassFile;
@@ -30,23 +35,20 @@ public class JavaClassHotswapDto implements Serializable {
         this.freshClassFile = freshClassFile;
     }
 
-    public JavaClassHotswapDto(String javaFilePath, boolean freshClassFile) {
-        this.javaFilePath = javaFilePath;
-        this.freshClassFile = freshClassFile;
-    }
-
-    public String getJavaFilePath() {
-        return javaFilePath;
-    }
-
-    public void setJavaFilePath(String javaFilePath) {
-        this.javaFilePath = javaFilePath;
-    }
-
     @Override
     public String toString() {
         return "JavaClassHotswapDto{" +
-                "javaFilePath='" + javaFilePath + '\'' +
+                ", originalFilePath='" + originalFilePath + '\'' +
+                ", freshClassFile=" + freshClassFile +
                 '}';
     }
+
+    public String getOriginalFilePath() {
+        return originalFilePath;
+    }
+
+    public void setOriginalFilePath(String originalFilePath) {
+        this.originalFilePath = originalFilePath;
+    }
+
 }

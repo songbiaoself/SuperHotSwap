@@ -1,6 +1,7 @@
 package com.coderevolt.ui;
 
 import com.coderevolt.context.ProjectContext;
+import com.coderevolt.util.CacheMap;
 import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorPolicy;
@@ -33,7 +34,8 @@ public class ClassFileEditorProvider extends TextEditorProvider {
     @Override
     public @NotNull FileEditor createEditor(@NotNull Project project, @NotNull VirtualFile file) {
         try {
-            String content = ProjectContext.load(project, file.getPath(), () -> {
+            CacheMap<Object, Object> cacheMap = ProjectContext.getCacheMap(project);
+            String content = (String) cacheMap.load(file.getPath(), () -> {
                 PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
                 return psiFile == null ? "occur error!!!" : psiFile.getText();
             });

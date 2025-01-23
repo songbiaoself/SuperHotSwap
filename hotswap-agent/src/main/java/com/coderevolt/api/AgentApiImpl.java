@@ -26,17 +26,18 @@ public class AgentApiImpl implements AgentApi {
 
     @Override
     public AgentResponse execute(AgentCommand agentCommand) {
-        HotswapHandler handler = createHandler(agentCommand.getCommandEnum());
+        AgentCommandEnum commandEnum = agentCommand.getCommandEnum();
+        HotswapHandler handler = createHandler(commandEnum);
         if (handler == null) {
-            return AgentResponse.failed("没找到处理器: " + agentCommand.getCommandEnum(), null);
+            return AgentResponse.failed("没找到处理器: " + commandEnum, null);
         }
         try {
             if (!handler.validateEnv()) {
-                return AgentResponse.failed("依赖环境校验失败: " + agentCommand.getCommandEnum(), null);
+                return AgentResponse.failed("依赖环境校验失败: " + commandEnum, null);
             }
             long startTime = System.currentTimeMillis();
             handler.dispatch(agentCommand);
-            System.out.println("[SuperHotSwap]热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
+            System.out.println("[SuperHotSwap]["+commandEnum.name()+"]热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
             return AgentResponse.success("执行命令成功", null);
         } catch (Throwable e) {
             e.printStackTrace();

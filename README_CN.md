@@ -59,6 +59,10 @@
 支持.class文件和jar包内源码文件热更新。
 ![img.png](img/jar-hotswap.png)
 
+7. 批量热更新
+
+支持IDEA Project窗口和Git修改记录窗口选中目录或文件进行热更新。
+
 
 ## 安装热更新补丁
 类热更新的局限性

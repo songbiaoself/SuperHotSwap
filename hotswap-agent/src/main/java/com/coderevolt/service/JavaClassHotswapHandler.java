@@ -19,11 +19,13 @@ import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author 公众号: CodeRevolt
@@ -43,20 +45,21 @@ public class JavaClassHotswapHandler implements HotswapHandler {
     public void dispatch(AgentCommand command) throws HotswapException {
         switch (command.getCommandEnum()) {
             case JAVA_CLASS_HOTSWAP:
-                classHotSwapDo(command);
+                classHotSwapDo((List<JavaClassHotswapDto>)command.getData());
                 break;
             default:
                 throw new HotswapException("Class不支持该命令: " + command.getCommandEnum());
         }
     }
 
-    private void classHotSwapDo(AgentCommand command) throws HotswapException {
-        JavaClassHotswapDto javaClassHotswapDto = (JavaClassHotswapDto) command.getData();
+    private void classHotSwapDo(List<JavaClassHotswapDto> classHotswapDtoList) throws HotswapException {
         Instrumentation inst = agentContext.getInst();
         List<ClassDefinition> definitions = new ArrayList<>();
         Map<Class<?>, AnnotatedElement> oldBeanTypeMap = new HashMap<>();
         try {
-            Map<String, byte[]> classMap = SystemClassHandler.compileJava(Paths.get(javaClassHotswapDto.getJavaFilePath()));
+            boolean freshClassFile = classHotswapDtoList.get(0).isFreshClassFile();
+            List<Path> paths = classHotswapDtoList.stream().map(item -> Paths.get(item.getOriginalFilePath())).collect(Collectors.toList());
+            Map<String, byte[]> classMap = SystemClassHandler.compileJava(paths);
             if (classMap != null && !classMap.isEmpty()) {
                 boolean springProfile = AgentUtil.isSpringProfile();
                 classMap.forEach((k, v) -> {
@@ -82,7 +85,7 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                         oldBeanTypeMap.put(clz, SpringUtil.getBeanType(clz));
                     }
                 }
-                if (javaClassHotswapDto.isFreshClassFile()) {
+                if (freshClassFile) {
                     for (ClassDefinition classDefinition : definitions) {
                         // 更新本地class文件，动态编译需要动态链接class文件（-classpath）
                         SystemClassHandler.freshClassFile(classDefinition.getDefinitionClass(), classDefinition.getDefinitionClassFile());
@@ -93,10 +96,10 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                     springHotSwap(definitions, oldBeanTypeMap);
                 }
             } else {
-                throw new HotswapException("编译失败: " + javaClassHotswapDto.getJavaFilePath());
+                throw new HotswapException("编译失败");
             }
         } catch (IOException | UnmodifiableClassException | ClassNotFoundException e) {
-            throw new HotswapException("class热更新失败: " + javaClassHotswapDto.getJavaFilePath(), e);
+            throw new HotswapException("class热更新失败", e);
         }
     }
 
@@ -118,7 +121,7 @@ public class JavaClassHotswapHandler implements HotswapHandler {
                 SpringUtil.registerBean(beanName, beanClass);
                 if (SpringUtil.isControllerBean(beanClass)) {
                     refreshMapping(beanClass);
-                    logger.info("[SuperHotSwap]更新requestMapping完成");
+                    logger.info("[SuperHotSwap]{}:更新requestMapping完成", beanClass.getSimpleName());
                 }
             }
 
@@ -142,7 +145,7 @@ public class JavaClassHotswapHandler implements HotswapHandler {
             // controller bean对象，更新mapping
             if (oldAnnotation != null && SpringUtil.isControllerBean(beanClass)) {
                 refreshMapping(beanClass);
-                logger.info("[SuperHotSwap]更新requestMapping完成");
+                logger.info("[SuperHotSwap]{}:更新requestMapping完成", beanClass.getSimpleName());
             }
         }
     }

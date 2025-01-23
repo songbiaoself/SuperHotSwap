@@ -8,15 +8,9 @@ import com.coderevolt.context.MachineBeanInfo;
 import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.proxy.GeneratorProxy;
 import com.coderevolt.util.CacheMap;
-import com.coderevolt.util.IdeaNotifyUtil;
 import com.coderevolt.utils.RpcInfo;
-import com.intellij.notification.NotificationType;
 
-import java.util.Collection;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * @author 公众号: CodeRevolt
@@ -25,48 +19,31 @@ import java.util.function.Consumer;
  */
 public class Connector {
 
-    private static final ThreadPoolExecutor COMMAND_THREAD_POOL = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-            Integer.MAX_VALUE,
-            30,
-            TimeUnit.MINUTES,
-            new LinkedBlockingQueue<>(),
-            r -> new Thread(r, "Command线程"));
 
     private static final CacheMap<String, AgentApi> cache = new CacheMap<>();
-
-    static {
-        COMMAND_THREAD_POOL.allowCoreThreadTimeOut(true);
-    }
 
     /**
      * 发送命令给所有进程
      *
      * @param command  指令
-     * @param vmList   接收进程
-     * @param consumer
+     * @param vm   接收进程
      * @throws HotswapException
      */
-    public static void sendToProcess(AgentCommand command, Collection<MachineBeanInfo> vmList, Consumer<AgentResponse<Object>> consumer) throws HotswapException {
-        if (vmList != null && !vmList.isEmpty()) {
-            for (MachineBeanInfo vm : vmList) {
-                COMMAND_THREAD_POOL.execute(() -> {
-                    try {
-                        // 获取rpc连接
-                        Class<AgentApi> agentApiClass = AgentApi.class;
-                        AgentApi rpcProxy = cache.get(vm.getUniqueId());
-                        if (rpcProxy == null) {
-                            rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
-                            cache.put(vm.getUniqueId(), rpcProxy, 1, TimeUnit.HOURS);
-                        }
-                        System.out.println("发送指令: " + command);
-                        IdeaNotifyUtil.notify("[" + vm.getProcessName() + "]发送命令", NotificationType.INFORMATION);
-                        consumer.accept(rpcProxy.execute(command));
-                    } catch (Exception e) {
-                        e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
-                        System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，uid: " + vm.getUniqueId() + "，异常: " + e.getMessage());
-                    }
-                });
+    public static AgentResponse<Object> sendToProcess(AgentCommand command, MachineBeanInfo vm) throws HotswapException {
+        try {
+            // 获取rpc连接
+            Class<AgentApi> agentApiClass = AgentApi.class;
+            AgentApi rpcProxy = cache.get(vm.getUniqueId());
+            if (rpcProxy == null) {
+                rpcProxy = (AgentApi) GeneratorProxy.getRPCProxy(agentApiClass, new RpcInfo(vm.getIp(), vm.getPort(), agentApiClass.getSimpleName() + "Impl"));
+                cache.put(vm.getUniqueId(), rpcProxy, 1, TimeUnit.HOURS);
             }
+            System.out.println("发送指令: " + command);
+            return rpcProxy.execute(command);
+        } catch (Exception e) {
+            e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
+            System.err.println("vm指令发送失败，进程名: " + vm.getProcessName() + "，uid: " + vm.getUniqueId() + "，异常: " + e.getMessage());
+            throw new HotswapException("vm指令发送失败", e);
         }
     }
 

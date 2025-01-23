@@ -1,23 +1,11 @@
 package com.coderevolt.action;
 
-import com.coderevolt.HotswapException;
-import com.coderevolt.handler.Handler;
 import com.coderevolt.handler.HandlerStrategyFactory;
-import com.coderevolt.log.SystemLogCollect;
-import com.coderevolt.util.IdeaNotifyUtil;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.util.NlsActions;
-import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 文件热更新action
@@ -26,12 +14,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ProjectAction extends AnAction {
 
-    private static final ExecutorService ACTION_THREAD_POOL = new ThreadPoolExecutor(2,
-            Integer.MAX_VALUE,
-            0,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(),
-            r -> new Thread(r, "action服务端线程"));
+    private final HandlerStrategyFactory handlerStrategyFactory = new HandlerStrategyFactory();
 
     public ProjectAction(@Nullable @NlsActions.ActionText String text) {
         super(text);
@@ -39,22 +22,7 @@ public class ProjectAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        PsiFile psiFile = e.getData(PlatformDataKeys.PSI_FILE);
-        String fileName = psiFile.getName();
-        for (Handler handler : HandlerStrategyFactory.listFileHandler()) {
-            if (handler.isSupport(fileName)) {
-                ACTION_THREAD_POOL.execute(() -> {
-                    try {
-                        handler.execute(e);
-                    } catch (HotswapException ex) {
-                        ex.printStackTrace(SystemLogCollect.getErrStreamWrapper());
-                        IdeaNotifyUtil.notify(ex.getMessage(), NotificationType.ERROR);
-                    }
-                });
-                return;
-            }
-        }
-        IdeaNotifyUtil.notify("暂不支持热更新", NotificationType.WARNING);
+        handlerStrategyFactory.doAction(e);
     }
 
 }

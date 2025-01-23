@@ -1,24 +1,21 @@
 package com.coderevolt.handler;
 
 import com.coderevolt.AgentCommand;
+import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
 import com.coderevolt.connect.Connector;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.MapperHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
-import com.coderevolt.util.IdeaNotifyUtil;
-import com.coderevolt.util.ProjectUtil;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,51 +24,62 @@ import java.util.regex.Pattern;
  * @date 2024/4/25 16:32
  * @description
  */
-public class XmlFileHandler implements Handler {
+public class XmlFileHandler extends AbstractActionHandler {
 
     private static final String mapperClassRegex = "<mapper\\s+namespace\\s*=\\s*\"(.+)\">";
 
     @Override
     public boolean isSupport(Object obj) {
-        if (!(obj instanceof String)) {
+        if (!(obj instanceof List)) {
             return false;
         }
-        return ((String) obj).toLowerCase().endsWith(".xml");
+        for (Object o : (List) obj) {
+            if (!(o instanceof VirtualFile)) return false;
+            VirtualFile vf = (VirtualFile) o;
+            String name = vf.getName().toLowerCase();
+            if (!name.endsWith(".xml")) return false;
+        }
+        return true;
     }
 
     @Override
-    public void execute(Object obj) throws HotswapException {
+    public AgentResponse<Object> execute(Object obj) throws HotswapException {
 
-        AnActionEvent e = (AnActionEvent) obj;
-        Document document = e.getData(PlatformDataKeys.EDITOR).getDocument();
-        String documentText = document.getText();
-        Matcher matcher = Pattern.compile(mapperClassRegex).matcher(documentText);
+        AnActionEvent e = getActionEvent();
+        List<VirtualFile> vfList = (List<VirtualFile>) obj;
+        List<MapperHotswapDto> mapperHotswapDtoList = new ArrayList<>();
 
-        if (matcher.find()) {
-            try {
-                PsiFile psiFile = e.getData(PlatformDataKeys.PSI_FILE);
-                String mapperClass = matcher.group(1).replace("\\s", "");
-
-                final String xmlTmpFileAbsPath = ProjectUtil.copyToLocal(new ByteArrayInputStream(document.getText().getBytes(StandardCharsets.UTF_8)), "tmp/" + psiFile.getName());
-
-                AgentCommand<MapperHotswapDto> command = new AgentCommand<>();
-                MapperHotswapDto mapperHtosDto = new MapperHotswapDto();
-                mapperHtosDto.setMapperClass(mapperClass);
-                mapperHtosDto.setMapperXmlPath(xmlTmpFileAbsPath);
-                command.setCommandEnum(AgentCommandEnum.MYBATIS_MAPPER_HOTSWAP);
-                command.setData(mapperHtosDto);
-
-                String processName = e.getPresentation().getText();
-                Connector.sendToProcess(command, Collections.singletonList(VirtualMachineContext.get(processName)), agentResponse -> {
-                    IdeaNotifyUtil.notify("[" + processName + "]" + agentResponse.getMsg(), agentResponse.isOk() ? NotificationType.INFORMATION : NotificationType.ERROR);
-                    new File(xmlTmpFileAbsPath).delete();
-                });
-            } catch (IOException ex) {
-                throw new HotswapException(ex.getMessage(), ex);
+        for (VirtualFile virtualFile : vfList) {
+            String text = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> {
+                PsiFile psiFile = PsiManager.getInstance(e.getProject()).findFile(virtualFile);
+                if (psiFile == null) return null;
+                return psiFile.getText();
+            });
+            if (text == null) {
+                System.err.println("获取文件内容失败：" + virtualFile.getPath());
+                continue;
             }
+            Matcher matcher = Pattern.compile(mapperClassRegex).matcher(text);
 
-        } else {
-            IdeaNotifyUtil.notify("namespace解析失败", NotificationType.ERROR);
+            if (matcher.find()) {
+                String mapperClass = matcher.group(1).replace("\\s", "");
+                MapperHotswapDto mapperHotswapDto = new MapperHotswapDto();
+                mapperHotswapDto.setMapperClass(mapperClass);
+                mapperHotswapDto.setMapperXmlPath(virtualFile.getPath());
+                mapperHotswapDtoList.add(mapperHotswapDto);
+
+            } else {
+                System.err.println("namespace解析失败: " + virtualFile.getPath());
+            }
         }
+
+        AgentCommand<List<MapperHotswapDto>> command = new AgentCommand<>();
+        command.setCommandEnum(AgentCommandEnum.MYBATIS_MAPPER_HOTSWAP);
+        command.setData(mapperHotswapDtoList);
+        String processName = e.getPresentation().getText();
+
+        AgentResponse<Object> agentResponse = Connector.sendToProcess(command, VirtualMachineContext.get(processName));
+        System.out.println("XmlFileHandler执行结果: " + agentResponse);
+        return agentResponse;
     }
 }

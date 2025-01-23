@@ -59,6 +59,10 @@ APIs can be created, edited, and deleted dynamically. The demonstration is as fo
 Supports hot update of source code files in .class files and jar packages.
 ![img.png](img/jar-hotswap.png)
 
+7. Batch Hot Update
+
+Supports hot updating of selected directories or files in the IDEA Project window and the Git change log window.
+
 ## Install hot update patches
 Limitations of hot-like updates
 

@@ -17,6 +17,7 @@
         <!--notify 2020.3版本后需在plugin中注册-->
         <notificationGroup displayType="BALLOON" id="notifyAction"/>
         <fileEditorProvider implementation="com.coderevolt.ui.ClassFileEditorProvider"/>
+
     </extensions>
 
     <projectListeners>
@@ -35,6 +36,8 @@
                 text="File Hot Swap"
                 popup="true">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="first"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </group>
     </actions>
 </idea-plugin>

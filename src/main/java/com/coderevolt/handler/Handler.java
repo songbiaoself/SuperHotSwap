@@ -1,5 +1,6 @@
 package com.coderevolt.handler;
 
+import com.coderevolt.AgentResponse;
 import com.coderevolt.HotswapException;
 
 /**
@@ -20,7 +21,8 @@ public interface Handler {
      * 执行
      *
      * @param obj
+     * @return
      */
-    void execute(Object obj) throws HotswapException;
+    AgentResponse<Object> execute(Object obj) throws HotswapException;
 
 }
