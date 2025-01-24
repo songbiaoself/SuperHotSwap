@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.coderevolt'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    implementation(project(":hotswap-common"))
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+}
+
+// 设置兼容性版本
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+jar {
+    def agentJarPath = "../hotswap-agent/build/libs/hotswap-agent.jar"
+
+    mustRunAfter(':hotswap-agent:jar')
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName = 'hotswap-remote.jar'
+
+    // 从运行时类路径收集依赖
+    from {
+        configurations.runtimeClasspath.files.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    // 直接将 hotswap-agent.jar 添加到最终的 JAR 中，而不解压缩
+    from agentJarPath
+}
