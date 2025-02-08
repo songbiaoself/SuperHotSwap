@@ -13,6 +13,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class AttachMain {
@@ -85,10 +88,20 @@ public class AttachMain {
 
         Class vmClz = null;
         Method attachMth = null;
-        try {
+        try (
             InputStream stream = AttachMain.class.getResourceAsStream("/hotswap-agent.jar");
-            String path = ProjectUtil.copyToLocal(stream, "remote/hotswap-agent.jar");
+        ){
+            Path tempFile = Files.createTempFile("hotswap-agent", ".jar");
+            tempFile.toFile().deleteOnExit();
+            try {
+                Files.copy(stream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                System.err.println("copy agent jar异常");
+                e.printStackTrace();
+                return;
+            }
 
+            String path = tempFile.toString();
             URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{new URL("file:/" + path)});
             vmClz = urlClassLoader.loadClass("com.sun.tools.attach.VirtualMachine");
             attachMth = vmClz.getMethod("attach", String.class);

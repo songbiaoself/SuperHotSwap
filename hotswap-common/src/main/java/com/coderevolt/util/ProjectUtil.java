@@ -4,8 +4,8 @@ package com.coderevolt.util;
 import com.coderevolt.Constant;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Random;
 
 /**
@@ -49,6 +49,29 @@ public class ProjectUtil {
             }
         }
         throw new IllegalStateException("查找可用端口超时");
+    }
+
+    public static void deleteFileRecursively(Path path) throws IOException {
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                // 删除当前访问的文件
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (exc == null) {
+                    // 删除当前访问的目录（仅在没有子目录或文件时）
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                } else {
+                    // 访问目录期间发生错误
+                    throw exc;
+                }
+            }
+        });
     }
 
     //    private static final int retry = 5;
