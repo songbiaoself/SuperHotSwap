@@ -39,7 +39,7 @@ intellij {
     version = '2021.3.3'
 }
 patchPluginXml {
-    sinceBuild = "203"
+    sinceBuild = "212"
 //    包含未来所有版本分支
     untilBuild = ""
     changeNotes = """
