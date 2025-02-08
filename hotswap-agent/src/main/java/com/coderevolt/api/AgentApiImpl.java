@@ -3,9 +3,7 @@ package com.coderevolt.api;
 import com.coderevolt.AgentCommand;
 import com.coderevolt.AgentResponse;
 import com.coderevolt.enums.AgentCommandEnum;
-import com.coderevolt.service.HotswapHandler;
-import com.coderevolt.service.JavaClassHotswapHandler;
-import com.coderevolt.service.MybatisHotswapHandler;
+import com.coderevolt.service.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +20,8 @@ public class AgentApiImpl implements AgentApi {
     static {
         HANDLER_MAP.put(AgentCommandEnum.MYBATIS_MAPPER_HOTSWAP, new MybatisHotswapHandler());
         HANDLER_MAP.put(AgentCommandEnum.JAVA_CLASS_HOTSWAP, new JavaClassHotswapHandler());
+        HANDLER_MAP.put(AgentCommandEnum.DETACH, new ShutDownHandler());
+        HANDLER_MAP.put(AgentCommandEnum.HEART_BEAT, new HeartBeatHandler());
     }
 
     @Override
@@ -37,7 +37,7 @@ public class AgentApiImpl implements AgentApi {
             }
             long startTime = System.currentTimeMillis();
             handler.dispatch(agentCommand);
-            System.out.println("[SuperHotSwap]["+commandEnum.name()+"]热更新耗时: " + (System.currentTimeMillis() - startTime) + "ms");
+            System.out.println("[SuperHotSwap]["+commandEnum.name()+"]指令耗时: " + (System.currentTimeMillis() - startTime) + "ms");
             return AgentResponse.success("执行命令成功", null);
         } catch (Throwable e) {
             e.printStackTrace();

@@ -17,4 +17,14 @@ public enum AgentCommandEnum {
      */
     JAVA_CLASS_HOTSWAP,
 
+    /**
+     * 断开连接
+     */
+    DETACH,
+
+    /**
+     * 心跳
+     */
+    HEART_BEAT,
+
 }

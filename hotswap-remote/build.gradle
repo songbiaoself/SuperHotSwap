@@ -12,6 +12,8 @@ repositories {
 
 dependencies {
     implementation(project(":hotswap-common"))
+    implementation(project(":hotswap-rpc"))
+    implementation(project(":hotswap-api"))
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -37,4 +39,9 @@ jar {
 
     // 直接将 hotswap-agent.jar 添加到最终的 JAR 中，而不解压缩
     from agentJarPath
+
+    manifest {
+        attributes 'Main-Class': "com.coderevolt.AttachMain"
+        attributes 'Manifest-Version': 1.0
+    }
 }
