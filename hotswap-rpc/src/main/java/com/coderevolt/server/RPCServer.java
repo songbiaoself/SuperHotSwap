@@ -43,6 +43,12 @@ public class RPCServer {
                     e.printStackTrace();
                 }
             }
+            try {
+                serverSocket.close();
+                System.out.println("RPC服务端[" + port + "]关闭成功.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }, "RPC服务端线程[" + port + "]");
         // 守护线程不影响进程结束
         serverThread.setDaemon(true);
