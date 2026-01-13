@@ -16,6 +16,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.util.concurrency.AppExecutorUtil;
 import com.intellij.util.ui.JBUI;
 
 import javax.swing.*;
@@ -26,6 +27,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ModifiedFileToolWindowPanel implements Disposable {
 
@@ -38,17 +42,27 @@ public class ModifiedFileToolWindowPanel implements Disposable {
     private final JComboBox<String> processComboBox = new JComboBox<>();
     private final JBTextField directoryFilterField = new JBTextField();
     private final JBLabel filterStatusLabel = new JBLabel();
+    private final JCheckBox autoHotSwapCheckBox = new JCheckBox("自动全量热更新");
+    private final JBTextField intervalField = new JBTextField();
+    private final JBLabel intervalStatusLabel = new JBLabel();
     private final JButton refreshProcessButton = new JButton("刷新进程");
     private final JButton selectAllButton = new JButton("全选");
     private final JButton clearButton = new JButton("清空记录");
     private final JButton hotSwapButton = new JButton("热更新选中");
     private final JPanel panel;
+    private final AtomicBoolean autoHotSwapRunning = new AtomicBoolean(false);
+    private final Object autoScheduleLock = new Object();
+    private volatile ScheduledFuture<?> autoHotSwapFuture;
+    private volatile String selectedProcessName;
 
     public ModifiedFileToolWindowPanel(Project project) {
         this.project = project;
         this.tracker = project.getService(ModifiedFileTracker.class);
         this.directoryFilterField.setText(tracker.getDirectoryExcludeRegex());
         this.filterStatusLabel.setForeground(JBColor.RED);
+        this.intervalField.setText("60");
+        this.intervalField.setColumns(6);
+        this.intervalStatusLabel.setForeground(JBColor.RED);
         this.panel = buildPanel();
         bindListeners();
         refreshProcessList();
@@ -61,7 +75,7 @@ public class ModifiedFileToolWindowPanel implements Disposable {
 
     @Override
     public void dispose() {
-        // no-op
+        cancelAutoHotSwap();
     }
 
     private JPanel buildPanel() {
@@ -78,10 +92,18 @@ public class ModifiedFileToolWindowPanel implements Disposable {
         filterPanel.add(directoryFilterField, BorderLayout.CENTER);
         filterPanel.add(filterStatusLabel, BorderLayout.EAST);
 
+        JPanel autoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        autoPanel.setBorder(JBUI.Borders.emptyTop(4));
+        autoPanel.add(autoHotSwapCheckBox);
+        autoPanel.add(new JBLabel("间隔(秒)"));
+        autoPanel.add(intervalField);
+        autoPanel.add(intervalStatusLabel);
+
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
         topPanel.add(processPanel);
         topPanel.add(filterPanel);
+        topPanel.add(autoPanel);
         root.add(topPanel, BorderLayout.NORTH);
 
         fileList.setCellRenderer(new ModifiedFileItemRenderer());
@@ -119,6 +141,8 @@ public class ModifiedFileToolWindowPanel implements Disposable {
         clearButton.addActionListener(e -> tracker.clear());
         refreshProcessButton.addActionListener(e -> refreshProcessList());
         hotSwapButton.addActionListener(e -> doHotSwap());
+        processComboBox.addActionListener(e -> selectedProcessName = (String) processComboBox.getSelectedItem());
+        autoHotSwapCheckBox.addActionListener(e -> toggleAutoHotSwap(autoHotSwapCheckBox.isSelected()));
 
         project.getMessageBus().connect(this).subscribe(ModifiedFileListener.TOPIC, () ->
                 ApplicationManager.getApplication().invokeLater(this::refreshFileList)
@@ -138,6 +162,23 @@ public class ModifiedFileToolWindowPanel implements Disposable {
             @Override
             public void changedUpdate(DocumentEvent e) {
                 applyDirectoryFilter();
+            }
+        });
+
+        intervalField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                applyIntervalChange();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                applyIntervalChange();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                applyIntervalChange();
             }
         });
     }
@@ -191,6 +232,7 @@ public class ModifiedFileToolWindowPanel implements Disposable {
         if (selected != null && names.contains(selected)) {
             processComboBox.setSelectedItem(selected);
         }
+        selectedProcessName = (String) processComboBox.getSelectedItem();
     }
 
     private void setAllSelected(boolean selected) {
@@ -223,6 +265,119 @@ public class ModifiedFileToolWindowPanel implements Disposable {
                 ApplicationManager.getApplication().invokeLater(() -> tracker.removeFiles(selectedFiles));
             }
         });
+    }
+
+    private void toggleAutoHotSwap(boolean enabled) {
+        if (!enabled) {
+            intervalStatusLabel.setText("");
+            cancelAutoHotSwap();
+            return;
+        }
+        scheduleAutoHotSwap();
+    }
+
+    private void applyIntervalChange() {
+        if (autoHotSwapCheckBox.isSelected()) {
+            scheduleAutoHotSwap();
+        } else {
+            intervalStatusLabel.setText("");
+        }
+    }
+
+    private void scheduleAutoHotSwap() {
+        Integer intervalSeconds = parseIntervalSeconds();
+        if (intervalSeconds == null) {
+            intervalStatusLabel.setText("间隔无效");
+            cancelAutoHotSwap();
+            return;
+        }
+        intervalStatusLabel.setText("");
+        synchronized (autoScheduleLock) {
+            cancelAutoHotSwapLocked();
+            autoHotSwapFuture = AppExecutorUtil.getAppScheduledExecutorService()
+                    .scheduleWithFixedDelay(this::runAutoHotSwapSafely, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
+        }
+    }
+
+    private void cancelAutoHotSwap() {
+        synchronized (autoScheduleLock) {
+            cancelAutoHotSwapLocked();
+        }
+    }
+
+    private void cancelAutoHotSwapLocked() {
+        if (autoHotSwapFuture != null) {
+            autoHotSwapFuture.cancel(false);
+            autoHotSwapFuture = null;
+        }
+    }
+
+    private Integer parseIntervalSeconds() {
+        String text = intervalField.getText();
+        if (text == null) {
+            return null;
+        }
+        text = text.trim();
+        if (text.isEmpty()) {
+            return null;
+        }
+        try {
+            int value = Integer.parseInt(text);
+            return value > 0 ? value : null;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private void runAutoHotSwapSafely() {
+        if (!autoHotSwapRunning.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            String processName = selectedProcessName;
+            if (processName == null || processName.trim().isEmpty()) {
+                autoHotSwapRunning.set(false);
+                return;
+            }
+            if (VirtualMachineContext.get(processName) == null) {
+                autoHotSwapRunning.set(false);
+                return;
+            }
+            List<VirtualFile> files = tracker.listModifiedFiles();
+            if (files.isEmpty()) {
+                autoHotSwapRunning.set(false);
+                return;
+            }
+
+            List<VirtualFile> validFiles = new ArrayList<>();
+            List<VirtualFile> invalidFiles = new ArrayList<>();
+            for (VirtualFile file : files) {
+                if (file == null || !file.isValid()) {
+                    if (file != null) {
+                        invalidFiles.add(file);
+                    }
+                    continue;
+                }
+                validFiles.add(file);
+            }
+
+            if (!invalidFiles.isEmpty()) {
+                ApplicationManager.getApplication().invokeLater(() -> tracker.removeFiles(invalidFiles));
+            }
+            if (validFiles.isEmpty()) {
+                autoHotSwapRunning.set(false);
+                return;
+            }
+
+            handlerStrategyFactory.doAction(project, processName, validFiles, response -> {
+                autoHotSwapRunning.set(false);
+                if (response.isOk()) {
+                    ApplicationManager.getApplication().invokeLater(() -> tracker.removeFiles(validFiles));
+                }
+            });
+        } catch (Throwable ex) {
+            autoHotSwapRunning.set(false);
+        }
     }
 
     private void applyDirectoryFilter() {
