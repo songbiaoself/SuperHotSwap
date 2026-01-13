@@ -28,6 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -89,13 +90,30 @@ public class HandlerStrategyFactory {
     }
 
     public void doAction(AnActionEvent action) {
+        Project project = action.getProject();
+        if (project == null) {
+            throw new IllegalArgumentException("Project不能为空");
+        }
         String processName = action.getPresentation().getText();
+        VirtualFile[] files = getFiles(action);
+        doAction(project, processName, files, null);
+    }
+
+    public void doAction(@NotNull Project project, @NotNull String processName, @NotNull List<VirtualFile> files, @Nullable Consumer<AgentResponse<?>> callback) {
+        doAction(project, processName, files.toArray(new VirtualFile[0]), callback);
+    }
+
+    public void doAction(@NotNull Project project, @NotNull String processName, VirtualFile[] files, @Nullable Consumer<AgentResponse<?>> callback) {
+        if (files == null || files.length == 0) {
+            throw new IllegalArgumentException("VirtualFile不能为空");
+        }
         CountDownLatch countDownLatch = new CountDownLatch(1);
         COMMAND_THREAD_POOL.execute(() -> {
+            AgentResponse<?> response = null;
             try {
-                Notification startNotify = IdeaNotifyUtil.notify("[" + processName + "]执行命令", NotificationType.INFORMATION, null, action.getProject());
+                Notification startNotify = IdeaNotifyUtil.notify("[" + processName + "]执行命令", NotificationType.INFORMATION, null, project);
                 // 启动带有进度指示的任务
-                ProgressManager.getInstance().run(new Task.Backgroundable(action.getProject(), "热更新执行") {
+                ProgressManager.getInstance().run(new Task.Backgroundable(project, "热更新执行") {
 
                     @Override
                     public void onCancel() {
@@ -110,22 +128,26 @@ public class HandlerStrategyFactory {
                             countDownLatch.await();
                         } catch (InterruptedException e) {
                             e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
-                            IdeaNotifyUtil.notify("热更新执行中断", NotificationType.WARNING, null, action.getProject());
+                            IdeaNotifyUtil.notify("热更新执行中断", NotificationType.WARNING, null, project);
                         }
                     }
                 });
-                AgentResponse<?> response = execute(action);
+                response = execute(project, processName, files);
                 startNotify.expire();
                 if (response.isOk()) {
-                    IdeaNotifyUtil.notify("[" + processName + "]执行成功", NotificationType.INFORMATION, executeInfoAction, action.getProject());
+                    IdeaNotifyUtil.notify("[" + processName + "]执行成功", NotificationType.INFORMATION, executeInfoAction, project);
                 } else {
-                    IdeaNotifyUtil.notify("[" + processName + "]执行失败: " + response.getMsg(), NotificationType.ERROR, executeErrorAction, action.getProject());
+                    IdeaNotifyUtil.notify("[" + processName + "]执行失败: " + response.getMsg(), NotificationType.ERROR, executeErrorAction, project);
                 }
             } catch (Throwable ex) {
+                response = AgentResponse.failed(ex.getMessage(), null);
                 ex.printStackTrace(SystemLogCollect.getErrStreamWrapper());
-                IdeaNotifyUtil.notify("[" + processName + "]执行异常: " + ex.getMessage(), NotificationType.ERROR, executeErrorAction, action.getProject());
+                IdeaNotifyUtil.notify("[" + processName + "]执行异常: " + ex.getMessage(), NotificationType.ERROR, executeErrorAction, project);
             } finally {
                 countDownLatch.countDown();
+                if (callback != null && response != null) {
+                    callback.accept(response);
+                }
             }
         });
     }
@@ -135,19 +157,15 @@ public class HandlerStrategyFactory {
      * @param action
      * @return
      */
-    private AgentResponse<?> execute(AnActionEvent action) {
-        VirtualFile[] files = getFiles(action);
-        if (files == null || files.length == 0) {
-            throw new IllegalArgumentException("VirtualFile不能为空");
-        }
+    private AgentResponse<?> execute(Project project, String processName, VirtualFile[] files) {
         StringBuilder err = new StringBuilder();
         predicateList.parallelStream().forEach(p -> {
             try {
                 List<VirtualFile> vfList = Arrays.stream(files).filter(p).collect(Collectors.toList());
                 if (!vfList.isEmpty()) {
-                    Handler handler = findHandler(action, vfList);
+                    Handler handler = findHandler(project, processName, vfList);
                     if (handler != null) {
-                        save2Disk(vfList, action.getProject());
+                        save2Disk(vfList, project);
                         AgentResponse<Object> response = handler.execute(vfList);
                         if (!response.isOk()) {
                             err.append(response.getMsg()).append(",");
@@ -204,11 +222,12 @@ public class HandlerStrategyFactory {
         return result.toArray(new VirtualFile[0]);
     }
 
-    private @Nullable Handler findHandler(AnActionEvent action, Object object) {
+    private @Nullable Handler findHandler(@NotNull Project project, @NotNull String processName, Object object) {
         for (Handler handler : listFileHandler()) {
             if (handler.isSupport(object)) {
                 if (handler instanceof AbstractActionHandler) {
-                    ((AbstractActionHandler) handler).setActionEvent(action);
+                    AbstractActionHandler actionHandler = (AbstractActionHandler) handler;
+                    actionHandler.setActionContext(project, processName);
                 }
                 return handler;
             }

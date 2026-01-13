@@ -7,8 +7,8 @@ import com.coderevolt.connect.Connector;
 import com.coderevolt.context.VirtualMachineContext;
 import com.coderevolt.dto.MapperHotswapDto;
 import com.coderevolt.enums.AgentCommandEnum;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -45,13 +45,16 @@ public class XmlFileHandler extends AbstractActionHandler {
     @Override
     public AgentResponse<Object> execute(Object obj) throws HotswapException {
 
-        AnActionEvent e = getActionEvent();
         List<VirtualFile> vfList = (List<VirtualFile>) obj;
         List<MapperHotswapDto> mapperHotswapDtoList = new ArrayList<>();
+        Project project = getProject();
+        if (project == null) {
+            throw new HotswapException("Project不能为空");
+        }
 
         for (VirtualFile virtualFile : vfList) {
             String text = ApplicationManager.getApplication().runReadAction((Computable<String>) () -> {
-                PsiFile psiFile = PsiManager.getInstance(e.getProject()).findFile(virtualFile);
+                PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
                 if (psiFile == null) return null;
                 return psiFile.getText();
             });
@@ -76,7 +79,10 @@ public class XmlFileHandler extends AbstractActionHandler {
         AgentCommand<List<MapperHotswapDto>> command = new AgentCommand<>();
         command.setCommandEnum(AgentCommandEnum.MYBATIS_MAPPER_HOTSWAP);
         command.setData(mapperHotswapDtoList);
-        String processName = e.getPresentation().getText();
+        String processName = getProcessName();
+        if (processName == null) {
+            throw new HotswapException("ProcessName不能为空");
+        }
 
         AgentResponse<Object> agentResponse = Connector.sendToProcess(command, VirtualMachineContext.get(processName));
         System.out.println("XmlFileHandler执行结果: " + agentResponse);

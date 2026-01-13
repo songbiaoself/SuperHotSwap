@@ -11,7 +11,6 @@ import com.coderevolt.enums.AgentCommandEnum;
 import com.coderevolt.log.SystemLogCollect;
 import com.coderevolt.util.CacheMap;
 import com.coderevolt.util.ProjectUtil;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
@@ -49,8 +48,10 @@ public class JavaFileHandler extends AbstractActionHandler {
 
     @Override
     public AgentResponse<Object> execute(Object obj) throws HotswapException {
-        AnActionEvent e = getActionEvent();
-        Project project = e.getProject();
+        Project project = getProject();
+        if (project == null) {
+            throw new HotswapException("Project不能为空");
+        }
 
         List<VirtualFile> virtualFiles = (List<VirtualFile>) obj;
         List<JavaClassHotswapDto> classHotswapDtoList = new ArrayList<>();
@@ -87,7 +88,10 @@ public class JavaFileHandler extends AbstractActionHandler {
         command.setCommandEnum(AgentCommandEnum.JAVA_CLASS_HOTSWAP);
         command.setData(classHotswapDtoList);
 
-        String processName = e.getPresentation().getText();
+        String processName = getProcessName();
+        if (processName == null) {
+            throw new HotswapException("ProcessName不能为空");
+        }
         CacheMap<Object, Object> cacheMap = ProjectContext.getCacheMap(project);
         AgentResponse<Object> agentResponse = Connector.sendToProcess(command, VirtualMachineContext.get(processName));
         System.out.println("JavaFileHandler执行结果: " + agentResponse);

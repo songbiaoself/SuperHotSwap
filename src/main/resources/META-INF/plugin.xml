@@ -17,6 +17,9 @@
         <!--notify 2020.3版本后需在plugin中注册-->
         <notificationGroup displayType="BALLOON" id="notifyAction"/>
         <fileEditorProvider implementation="com.coderevolt.ui.ClassFileEditorProvider"/>
+        <postStartupActivity implementation="com.coderevolt.listener.ModifiedFileStartupActivity"/>
+        <toolWindow id="Hot Swap Files" anchor="left"
+                    factoryClass="com.coderevolt.ui.ModifiedFileToolWindowFactory"/>
 
     </extensions>
 
