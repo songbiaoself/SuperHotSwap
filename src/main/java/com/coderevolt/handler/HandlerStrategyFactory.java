@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,12 +38,28 @@ import java.util.stream.Collectors;
  */
 public class HandlerStrategyFactory {
 
-    private static final ThreadPoolExecutor COMMAND_THREAD_POOL = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
-            Integer.MAX_VALUE,
-            30,
-            TimeUnit.MINUTES,
-            new LinkedBlockingQueue<>(),
-            r -> new Thread(r, "Command线程"));
+    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int CORE_POOL_SIZE = Math.max(2, CPU_COUNT);
+    private static final int MAX_POOL_SIZE = CORE_POOL_SIZE * 2;
+    private static final int QUEUE_CAPACITY = 256;
+    private static final AtomicInteger COMMAND_THREAD_ID = new AtomicInteger(1);
+    private static final ThreadPoolExecutor COMMAND_THREAD_POOL = new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAX_POOL_SIZE,
+            60L,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(QUEUE_CAPACITY),
+            r -> {
+                Thread thread = new Thread(r, "Command线程-" + COMMAND_THREAD_ID.getAndIncrement());
+                thread.setDaemon(true);
+                return thread;
+            },
+            new ThreadPoolExecutor.CallerRunsPolicy()
+    );
+
+    static {
+        COMMAND_THREAD_POOL.allowCoreThreadTimeOut(true);
+    }
 
     private final AnAction executeInfoAction = new ExecuteDetailAction("info.log");
 
