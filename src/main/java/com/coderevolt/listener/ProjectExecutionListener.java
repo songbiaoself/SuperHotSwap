@@ -114,6 +114,9 @@ public class ProjectExecutionListener implements ExecutionListener {
         machineBeanInfo.setProcessName(runProfileName);
         machineBeanInfo.setIp("127.0.0.1");
         machineBeanInfo.setPort(port);
+        if (env.getProject() != null) {
+            machineBeanInfo.setProjectLocationHash(env.getProject().getLocationHash());
+        }
 
         System.out.println("添加上下文数据: " + machineBeanInfo);
         VirtualMachineContext.put(runProfileName, machineBeanInfo);

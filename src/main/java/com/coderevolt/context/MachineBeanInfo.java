@@ -13,6 +13,8 @@ public class MachineBeanInfo {
 
     private String processName;
 
+    private String projectLocationHash;
+
     public String getIp() {
         return ip;
     }
@@ -41,12 +43,21 @@ public class MachineBeanInfo {
         this.processName = processName;
     }
 
+    public String getProjectLocationHash() {
+        return projectLocationHash;
+    }
+
+    public void setProjectLocationHash(String projectLocationHash) {
+        this.projectLocationHash = projectLocationHash;
+    }
+
     @Override
     public String toString() {
         return "MachineBeanInfo{" +
                 "ip='" + ip + '\'' +
                 ", port=" + port +
                 ", processName='" + processName + '\'' +
+                ", projectLocationHash='" + projectLocationHash + '\'' +
                 '}';
     }
 }

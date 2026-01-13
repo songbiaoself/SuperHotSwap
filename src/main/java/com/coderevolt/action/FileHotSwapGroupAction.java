@@ -20,7 +20,14 @@ public class FileHotSwapGroupAction extends ActionGroup {
     @Override
     public AnAction @NotNull [] getChildren(@Nullable AnActionEvent e) {
         List<AnAction> actions = new ArrayList<>();
+        String projectLocationHash = null;
+        if (e != null && e.getProject() != null) {
+            projectLocationHash = e.getProject().getLocationHash();
+        }
         for (MachineBeanInfo process : VirtualMachineContext.values()) {
+            if (projectLocationHash != null && !projectLocationHash.equals(process.getProjectLocationHash())) {
+                continue;
+            }
             actions.add(new ProjectAction(process.getProcessName()));
         }
         return actions.toArray(new AnAction[0]);
