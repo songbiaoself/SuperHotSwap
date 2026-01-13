@@ -20,17 +20,25 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @Service(Service.Level.PROJECT)
 public final class ModifiedFileTracker {
 
+    public static final String DEFAULT_EXCLUDE_REGEX = "(^|[\\\\/])(\\.idea|\\.gradle|\\.mvn|build|out|target)([\\\\/]|$)";
+
     private final Project project;
     private final ConcurrentMap<String, VirtualFile> modifiedFiles = new ConcurrentHashMap<>();
     private final List<Predicate<VirtualFile>> predicates;
+    private volatile Pattern directoryExcludePattern;
+    private volatile String directoryExcludeRegex;
 
     public ModifiedFileTracker(Project project) {
         this.project = project;
         this.predicates = new HandlerStrategyFactory().listPredicates();
+        this.directoryExcludeRegex = DEFAULT_EXCLUDE_REGEX;
+        this.directoryExcludePattern = Pattern.compile(DEFAULT_EXCLUDE_REGEX);
         MessageBusConnection connection = ApplicationManager.getApplication().getMessageBus().connect(project);
         connection.subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
             @Override
@@ -66,6 +74,38 @@ public final class ModifiedFileTracker {
         }
     }
 
+    public String getDirectoryExcludeRegex() {
+        return directoryExcludeRegex;
+    }
+
+    public boolean updateDirectoryExcludeRegex(String regex) {
+        String normalized = regex == null ? "" : regex.trim();
+        Pattern compiled = null;
+        try {
+            if (!normalized.isEmpty()) {
+                compiled = Pattern.compile(normalized);
+            }
+        } catch (PatternSyntaxException ex) {
+            return false;
+        }
+        directoryExcludeRegex = normalized;
+        directoryExcludePattern = compiled;
+        if (compiled != null) {
+            boolean changed = false;
+            for (String path : new ArrayList<>(modifiedFiles.keySet())) {
+                if (compiled.matcher(path).find()) {
+                    if (modifiedFiles.remove(path) != null) {
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                fireChanged();
+            }
+        }
+        return true;
+    }
+
     private void handleEvents(List<? extends VFileEvent> events) {
         boolean changed = false;
         ProjectFileIndex projectFileIndex = ProjectFileIndex.getInstance(project);
@@ -84,6 +124,9 @@ public final class ModifiedFileTracker {
                 continue;
             }
             if (!projectFileIndex.isInContent(file)) {
+                continue;
+            }
+            if (isExcludedByDir(file.getPath())) {
                 continue;
             }
             if (!isSupported(file)) {
@@ -105,6 +148,11 @@ public final class ModifiedFileTracker {
             }
         }
         return false;
+    }
+
+    private boolean isExcludedByDir(String path) {
+        Pattern pattern = directoryExcludePattern;
+        return pattern != null && pattern.matcher(path).find();
     }
 
     private void fireChanged() {
