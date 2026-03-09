@@ -81,12 +81,12 @@ public class MybatisHotswapHandler implements HotswapHandler {
                     for (Resource resource : allModuleClassPath) {
                         URL url = resource.getURL();
                         if ("file".equals(url.getProtocol())) {
-                            try (
-                                    FileInputStream xmlFileStream = new FileInputStream(xmlFile)
-                            ) {
+                            try {
                                 xmlResourceFile = AgentUtil.searchFile(url.getPath(), xmlFile.getName());
                                 resourceClassPath = OsUtil.isWindows() && url.getPath().startsWith("/") ? url.getPath().substring(1) : url.getPath();
-                                Files.copy(xmlFileStream, xmlResourceFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                try (FileInputStream xmlFileStream = new FileInputStream(xmlFile)) {
+                                    Files.copy(xmlFileStream, xmlResourceFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                                }
                                 break;
                             } catch (FileNotFoundException ignored) {
 

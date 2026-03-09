@@ -17,12 +17,13 @@
         <!--notify 2020.3版本后需在plugin中注册-->
         <notificationGroup displayType="BALLOON" id="notifyAction"/>
         <fileEditorProvider implementation="com.coderevolt.ui.ClassFileEditorProvider"/>
-
     </extensions>
 
     <projectListeners>
         <listener class="com.coderevolt.listener.ProjectExecutionListener"
                   topic="com.intellij.execution.ExecutionListener"/>
+        <listener class="com.coderevolt.listener.MyApplicationListener"
+                  topic="com.intellij.ide.AppLifecycleListener"/>
     </projectListeners>
 
     <actions>
@@ -39,5 +40,11 @@
             <add-to-group group-id="ChangesViewPopupMenu" anchor="first"/>
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </group>
+
+        <!-- 定义Action -->
+        <action id="superHotSwapConfigAction" class="com.coderevolt.action.RemoteConfigAction" text="Super HotSwap" description="superHotSwap config">
+            <!-- 将Action添加到Settings页面的Tools菜单下 -->
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
     </actions>
 </idea-plugin>

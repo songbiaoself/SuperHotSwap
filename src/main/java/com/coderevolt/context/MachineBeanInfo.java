@@ -13,6 +13,15 @@ public class MachineBeanInfo {
 
     private String processName;
 
+    public MachineBeanInfo() {
+    }
+
+    public MachineBeanInfo(String ip, int port, String processName) {
+        this.ip = ip;
+        this.port = port;
+        this.processName = processName;
+    }
+
     public String getIp() {
         return ip;
     }

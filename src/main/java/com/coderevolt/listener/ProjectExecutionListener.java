@@ -39,10 +39,6 @@ public class ProjectExecutionListener implements ExecutionListener {
 //            r -> new Thread(r, "ExecutionListener线程"));
     private static String agentJarPath;
 
-    static {
-        SystemLogCollect.injectStandardStream();
-    }
-
     public static String getAgentJarPath() throws IOException {
         if (agentJarPath == null) {
             synchronized (ProjectExecutionListener.class) {

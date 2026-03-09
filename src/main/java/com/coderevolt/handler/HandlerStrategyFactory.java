@@ -140,6 +140,7 @@ public class HandlerStrategyFactory {
                     }
                 }
             } catch (HotswapException e) {
+                err.append(e.getMessage()).append(",");
                 System.err.println("HotswapException: " + e.getMessage());
                 e.printStackTrace(SystemLogCollect.getErrStreamWrapper());
             }

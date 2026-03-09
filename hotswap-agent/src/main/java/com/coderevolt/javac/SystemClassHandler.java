@@ -1,5 +1,6 @@
 package com.coderevolt.javac;
 
+import com.coderevolt.Constant;
 import com.coderevolt.HotswapException;
 import com.coderevolt.util.AgentUtil;
 
@@ -11,6 +12,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +35,25 @@ public class SystemClassHandler {
     private static final ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
 
     private static volatile Boolean isLombokProfile = null;
+
+    public static final String myClassPathName = "root";
+
+    static {
+        // 添加自定义类路径
+        try {
+            Class<? extends URLClassLoader> aClass = URLClassLoader.class;
+            Method addURL = aClass.getDeclaredMethod("addURL", URL.class);
+            addURL.setAccessible(true);
+            addURL.invoke(systemClassLoader, new URL("file:" + getMyClassPath()));
+        } catch (Throwable e) {
+            System.err.println("初始化自定义类路径失败");
+            e.printStackTrace();
+        }
+    }
+
+    private static String getMyClassPath() {
+        return Constant.homePath + File.separator + myClassPathName;
+    }
 
     /**
      * 使用系统类加载器加载类，只有相同的类加载器加载的类才能相互调用
@@ -153,7 +175,7 @@ public class SystemClassHandler {
         try {
             String name = loadClass.getName().replace(".", "/") + ".class";
             name = name.replace("\\", File.separator).replace("/", File.separator);
-            File classFile = new File(AgentUtil.getAbsClassPath(loadClass), name);
+            File classFile = new File(getMyClassPath(), name);
             if (!classFile.getParentFile().exists()) {
                 classFile.getParentFile().mkdirs();
             }
