@@ -73,7 +73,7 @@ public class ProjectExecutionListener implements ExecutionListener {
             Method getVMParametersMethod = runProfileClz.getMethod("getVMParameters");
             getVMParametersMethod.setAccessible(true);
 
-            final String agentRegex = getAgentJarPath().replace("\\", "\\\\") + "=[0-9]{5}";
+            final String agentRegex = getAgentJarPath().replace("\\", "\\\\") + "=[0-9]+";
             String path = getAgentJarPath() + "=" + port;
             String agentVMParam = "-javaagent:" + path;
             String userDefinedVM = (String) getVMParametersMethod.invoke(runProfile);
@@ -238,7 +238,7 @@ public class ProjectExecutionListener implements ExecutionListener {
                 Method getVMParametersMethod = runProfileClz.getMethod("getVMParameters");
                 getVMParametersMethod.setAccessible(true);
 
-                final String agentRegex = "-javaagent:"  + getAgentJarPath().replace("\\", "\\\\") + "=[0-9]{5}";
+                final String agentRegex = "-javaagent:"  + getAgentJarPath().replace("\\", "\\\\") + "=[0-9]+";
                 String userDefinedVM = (String) getVMParametersMethod.invoke(runProfile);
                 if (userDefinedVM != null && !userDefinedVM.trim().isEmpty()) {
                     setVMParametersMethod.invoke(runProfile, userDefinedVM.replaceAll(agentRegex, "").trim());
